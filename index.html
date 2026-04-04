@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>World Clock</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f3;
+      color: #1a1a1a;
+      min-height: 100vh;
+      padding: 1.5rem;
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 500;
+      margin-bottom: 1rem;
+      color: #1a1a1a;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .toolbar button {
+      font-size: 13px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 0.5px solid #ccc;
+      background: transparent;
+      color: #1a1a1a;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .toolbar button:hover { background: #ebebeb; }
+    .toolbar button.active { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+
+    .divider { width: 1px; height: 16px; background: #ddd; }
+
+    .clock-container { display: grid; gap: 10px; }
+    .clock-container.horizontal { grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); }
+    .clock-container.vertical { grid-template-columns: 1fr; }
+
+    .clock-card {
+      background: #ffffff;
+      border: 0.5px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      cursor: grab;
+      user-select: none;
+      transition: border-color 0.15s;
+    }
+
+    .clock-card.home { border: 2px solid #93c5fd; }
+    .clock-card.dragging { opacity: 0.35; }
+    .clock-card.drag-over { border-color: #93c5fd; border-style: dashed; }
+    .clock-card.hidden-card { opacity: 0.45; }
+
+    .clock-card.vertical-square {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      max-width: 200px;
+    }
+
+    .card-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 5px;
+    }
+
+    .spacer { flex: 1; }
+
+    .btn-icon {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      color: #aaa;
+    }
+
+    .btn-icon:hover { color: #333; }
+
+    .city-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: #1a1a1a;
+      margin: 0 0 4px;
+    }
+
+    .tz-badge {
+      display: inline-block;
+      font-size: 11px;
+      padding: 1px 7px;
+      border-radius: 6px;
+      background: rgba(0,0,0,0.07);
+      color: #666;
+      margin-bottom: 5px;
+    }
+
+    .clock-time-wrap { display: flex; align-items: baseline; gap: 3px; }
+
+    .clock-time {
+      font-size: 24px;
+      font-weight: 500;
+      color: #1a1a1a;
+      letter-spacing: -0.5px;
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .clock-ampm { font-size: 10px; font-weight: 500; color: #888; }
+    .clock-date { font-size: 11px; color: #666; margin: 2px 0 0; }
+    .clock-meta { font-size: 11px; color: #999; margin: 4px 0 0; display: flex; align-items: center; gap: 4px; }
+    .hidden-label { font-size: 11px; color: #999; margin: 2px 0 0; }
+
+    .color-panel {
+      position: fixed;
+      z-index: 999;
+      background: #fff;
+      border: 0.5px solid #ccc;
+      border-radius: 12px;
+      padding: 14px;
+      min-width: 220px;
+      display: none;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    .color-panel.open { display: block; }
+    .color-panel h4 { font-size: 13px; font-weight: 500; margin: 0 0 10px; }
+    .color-panel label { font-size: 12px; color: #666; display: block; margin-bottom: 4px; }
+    .color-panel input[type=color] { width: 100%; height: 32px; border: 0.5px solid #ccc; border-radius: 8px; cursor: pointer; padding: 2px; background: none; margin-bottom: 10px; }
+
+    .tab-row { display: flex; margin-bottom: 12px; border: 0.5px solid #ccc; border-radius: 8px; overflow: hidden; }
+    .tab-row button { flex: 1; font-size: 12px; padding: 5px; border: none; background: transparent; color: #666; cursor: pointer; }
+    .tab-row button.active { background: #dbeafe; color: #1e40af; }
+
+    .gradient-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .gradient-row input[type=color] { flex: 1; height: 32px; border: 0.5px solid #ccc; border-radius: 8px; cursor: pointer; padding: 2px; background: none; margin: 0; }
+
+    .gradient-preview { height: 20px; border-radius: 8px; margin-bottom: 10px; border: 0.5px solid #e0e0e0; }
+
+    .gradient-dir { display: flex; gap: 6px; margin-bottom: 10px; }
+    .gradient-dir button { font-size: 11px; padding: 3px 8px; border-radius: 6px; border: 0.5px solid #ccc; background: transparent; color: #666; cursor: pointer; }
+    .gradient-dir button.active { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+
+    .panel-row { display: flex; gap: 8px; }
+    .panel-row button { flex: 1; font-size: 12px; padding: 6px; border-radius: 8px; border: 0.5px solid #ccc; background: transparent; color: #1a1a1a; cursor: pointer; }
+    .panel-row button.primary { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+
+    .add-panel {
+      margin-top: 1rem;
+      padding: 1rem 1.25rem;
+      border: 0.5px solid #e0e0e0;
+      border-radius: 12px;
+      background: #f5f5f3;
+      display: none;
+    }
+
+    .add-panel.open { display: block; }
+
+    .add-panel select,
+    .add-panel input[type=text] {
+      width: 100%;
+      margin-bottom: 8px;
+      font-size: 14px;
+      padding: 6px 10px;
+      border: 0.5px solid #ccc;
+      border-radius: 8px;
+      background: #fff;
+      color: #1a1a1a;
+    }
+
+    .add-panel .row { display: flex; gap: 8px; }
+    .add-panel .row button { flex: 1; font-size: 13px; padding: 7px; border-radius: 8px; border: 0.5px solid #ccc; background: transparent; color: #1a1a1a; cursor: pointer; }
+    .add-panel .row button.primary { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+
+    .footer { font-size: 11px; color: #aaa; text-align: right; margin-top: 10px; }
+
+    @media (prefers-color-scheme: dark) {
+      body { background: #1a1a1a; color: #f0f0f0; }
+      h1 { color: #f0f0f0; }
+      .clock-card { background: #2a2a2a; border-color: #3a3a3a; }
+      .clock-card.home { border-color: #3b82f6; }
+      .city-label, .clock-time { color: #f0f0f0; }
+      .tz-badge { background: rgba(255,255,255,0.1); color: #aaa; }
+      .clock-date { color: #aaa; }
+      .clock-meta { color: #888; }
+      .toolbar button { border-color: #444; color: #f0f0f0; }
+      .toolbar button:hover { background: #2a2a2a; }
+      .toolbar button.active { background: #1e3a5f; color: #93c5fd; border-color: #3b82f6; }
+      .color-panel { background: #2a2a2a; border-color: #444; }
+      .color-panel h4 { color: #f0f0f0; }
+      .add-panel { background: #222; border-color: #3a3a3a; }
+      .add-panel select, .add-panel input[type=text] { background: #2a2a2a; color: #f0f0f0; border-color: #444; }
+      .divider { background: #444; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>World Clock</h1>
+
+  <div class="toolbar">
+    <button id="btnH" class="active" onclick="setLayout('horizontal')">Horizontal</button>
+    <button id="btnV" onclick="setLayout('vertical')">Vertical</button>
+    <button id="btn12" onclick="toggle12()">12hr</button>
+    <div class="divider"></div>
+    <button onclick="openColorPanel(-1, event)">🎨 Theme</button>
+    <div class="divider"></div>
+    <button onclick="toggleAdd()">+ Add timezone</button>
+  </div>
+
+  <div class="clock-container horizontal" id="clockGrid"></div>
+
+  <div class="add-panel" id="addPanel">
+    <select id="tzSelect"></select>
+    <input type="text" id="cityInput" placeholder="Display name (e.g. New York)" />
+    <div class="row">
+      <button onclick="toggleAdd()">Cancel</button>
+      <button class="primary" onclick="addZone()">Add</button>
+    </div>
+  </div>
+
+  <div class="footer" id="footer"></div>
+
+  <div class="color-panel" id="colorPanel">
+    <h4 id="panelTitle">Card colour</h4>
+    <div class="tab-row">
+      <button id="tabSolid" class="active" onclick="setTab('solid')">Solid</button>
+      <button id="tabGrad" onclick="setTab('gradient')">Gradient</button>
+    </div>
+    <div id="solidSection">
+      <label>Pick a colour</label>
+      <input type="color" id="solidColor" value="#ffffff">
+    </div>
+    <div id="gradSection" style="display:none;">
+      <label>From → To</label>
+      <div class="gradient-row">
+        <input type="color" id="gradFrom" value="#B5D4F4" oninput="updateGradPreview()">
+        <input type="color" id="gradTo" value="#EEEDFE" oninput="updateGradPreview()">
+      </div>
+      <div class="gradient-preview" id="gradPreview"></div>
+      <label>Direction</label>
+      <div class="gradient-dir">
+        <button class="active" onclick="setDir('to right',this)">→</button>
+        <button onclick="setDir('to bottom',this)">↓</button>
+        <button onclick="setDir('to bottom right',this)">↘</button>
+        <button onclick="setDir('to bottom left',this)">↙</button>
+      </div>
+    </div>
+    <div class="panel-row">
+      <button onclick="closeColorPanel()">Cancel</button>
+      <button class="primary" onclick="applyColor()">Apply</button>
+    </div>
+  </div>
+
+  <script>
+    const ALL_TZ = [
+      ['Africa/Cairo','Cairo'],['Africa/Lagos','Lagos'],['Africa/Nairobi','Nairobi'],
+      ['America/Chicago','Chicago'],['America/Los_Angeles','Los Angeles'],['America/New_York','New York'],
+      ['America/Sao_Paulo','São Paulo'],['America/Toronto','Toronto'],['America/Vancouver','Vancouver'],
+      ['Asia/Bangkok','Bangkok'],['Asia/Dubai','Dubai'],['Asia/Hong_Kong','Hong Kong'],
+      ['Asia/Jakarta','Jakarta'],['Asia/Karachi','Karachi'],['Asia/Kolkata','Bangalore'],
+      ['Asia/Kuala_Lumpur','Kuala Lumpur'],['Asia/Seoul','Seoul'],['Asia/Shanghai','Shanghai'],
+      ['Asia/Singapore','Singapore'],['Asia/Tokyo','Tokyo'],['Australia/Sydney','Sydney'],
+      ['Europe/Amsterdam','Amsterdam'],['Europe/Berlin','Berlin'],['Europe/Istanbul','Istanbul'],
+      ['Europe/London','London'],['Europe/Moscow','Moscow'],['Europe/Paris','Paris'],
+      ['Pacific/Auckland','Auckland'],['Pacific/Honolulu','Honolulu'],['UTC','UTC'],
+    ];
+
+    let zones = [
+      { city: 'Bangalore', tz: 'Asia/Kolkata', label: 'IST', home: true, visible: true, bg: null },
+      { city: 'Dubai', tz: 'Asia/Dubai', label: 'GST', home: false, visible: true, bg: null },
+      { city: 'UTC', tz: 'UTC', label: 'UTC', home: false, visible: true, bg: null },
+      { city: 'São Paulo', tz: 'America/Sao_Paulo', label: 'BRT', home: false, visible: true, bg: null },
+      { city: 'Chicago', tz: 'America/Chicago', label: 'CDT', home: false, visible: true, bg: null },
+    ];
+
+    let layout = 'horizontal';
+    let use12hr = false;
+    let dragSrc = null;
+    let activeCardIdx = null;
+    let gradDir = 'to right';
+    let currentTab = 'solid';
+
+    function isDaytime(tz) {
+      const h = parseInt(new Date().toLocaleString('en-US', { timeZone: tz, hour: 'numeric', hour12: false }));
+      return h >= 6 && h < 20;
+    }
+
+    function getOffset(tz) {
+      const now = new Date();
+      const tzDate = new Date(now.toLocaleString('en-US', { timeZone: tz }));
+      const utcDate = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
+      const diff = (tzDate - utcDate) / 3600000;
+      const sign = diff >= 0 ? '+' : '-';
+      const abs = Math.abs(diff);
+      const h = Math.floor(abs);
+      const m = Math.round((abs - h) * 60);
+      return `UTC${sign}${h}${m ? ':' + String(m).padStart(2,'0') : ''}`;
+    }
+
+    function sunIcon() { return `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#BA7517" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.93" y1="4.93" x2="7.05" y2="7.05"/><line x1="16.95" y1="16.95" x2="19.07" y2="19.07"/><line x1="4.93" y1="19.07" x2="7.05" y2="16.95"/><line x1="16.95" y1="7.05" x2="19.07" y2="4.93"/></svg>`; }
+    function moonIcon() { return `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#534AB7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`; }
+    function eyeOpenIcon() { return `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`; }
+    function eyeClosedIcon() { return `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`; }
+    function removeIcon() { return `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`; }
+    function paletteIcon() { return `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>`; }
+
+    function visibleCount() { return zones.filter(z => z.visible).length; }
+
+    function render() {
+      const now = new Date();
+      const grid = document.getElementById('clockGrid');
+      grid.innerHTML = '';
+      grid.className = 'clock-container ' + layout;
+
+      zones.forEach((z, i) => {
+        const fullTime = now.toLocaleTimeString('en-US', { timeZone: z.tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: use12hr });
+        let timeDisplay = fullTime, ampm = '';
+        if (use12hr) {
+          const match = fullTime.match(/^(\d{1,2}:\d{2}:\d{2})\s*(AM|PM)$/i);
+          if (match) { timeDisplay = match[1]; ampm = match[2]; }
+        } else {
+          timeDisplay = now.toLocaleTimeString('en-GB', { timeZone: z.tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+        }
+
+        const dateStr = now.toLocaleDateString('en-GB', { timeZone: z.tz, weekday: 'short', day: 'numeric', month: 'short' });
+        const day = isDaytime(z.tz);
+        const offset = getOffset(z.tz);
+
+        const card = document.createElement('div');
+        card.className = 'clock-card' + (z.home ? ' home' : '') + (!z.visible ? ' hidden-card' : '') + (layout === 'vertical' ? ' vertical-square' : '');
+        card.draggable = true;
+        card.dataset.idx = i;
+        if (z.bg) card.style.background = z.bg;
+
+        card.innerHTML = `
+          <div class="card-actions">
+            <button class="btn-icon" title="Card colour" onclick="openColorPanel(${i}, event)">${paletteIcon()}</button>
+            <div class="spacer"></div>
+            <button class="btn-icon" title="${z.visible ? 'Hide' : 'Show'}" onclick="toggleVisible(${i})">${z.visible ? eyeOpenIcon() : eyeClosedIcon()}</button>
+            ${z.home ? '' : `<button class="btn-icon" title="Remove" onclick="removeZone(${i})">${removeIcon()}</button>`}
+          </div>
+          <p class="city-label">${z.city}${z.home ? ' ★' : ''}</p>
+          <span class="tz-badge">${z.label || z.tz.split('/').pop()}</span>
+          ${z.visible ? `
+            <div class="clock-time-wrap">
+              <span class="clock-time">${timeDisplay}</span>
+              ${ampm ? `<span class="clock-ampm">${ampm}</span>` : ''}
+            </div>
+            <p class="clock-date">${dateStr}</p>
+            <p class="clock-meta">${day ? sunIcon() : moonIcon()} ${day ? 'Daytime' : 'Night'} · ${offset}</p>
+          ` : `<p class="hidden-label">Hidden — click eye to show</p>`}
+        `;
+
+        card.addEventListener('dragstart', e => { dragSrc = i; card.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+        card.addEventListener('dragend', () => { card.classList.remove('dragging'); document.querySelectorAll('.clock-card').forEach(c => c.classList.remove('drag-over')); });
+        card.addEventListener('dragover', e => { e.preventDefault(); card.classList.add('drag-over'); });
+        card.addEventListener('dragleave', () => card.classList.remove('drag-over'));
+        card.addEventListener('drop', e => {
+          e.preventDefault();
+          if (dragSrc !== null && dragSrc !== i) {
+            const moved = zones.splice(dragSrc, 1)[0];
+            zones.splice(i, 0, moved);
+            dragSrc = null; render();
+          }
+        });
+
+        grid.appendChild(card);
+      });
+
+      document.getElementById('footer').textContent = `${visibleCount()} of 5 shown · ${use12hr ? '12hr' : '24hr'} · updated ${now.toLocaleTimeString()}`;
+    }
+
+    function setLayout(l) {
+      layout = l;
+      document.getElementById('btnH').classList.toggle('active', l === 'horizontal');
+      document.getElementById('btnV').classList.toggle('active', l === 'vertical');
+      render();
+    }
+
+    function toggle12() {
+      use12hr = !use12hr;
+      document.getElementById('btn12').classList.toggle('active', use12hr);
+      render();
+    }
+
+    function toggleVisible(i) {
+      if (zones[i].visible) { zones[i].visible = false; }
+      else {
+        if (visibleCount() >= 5) { alert('Max 5 visible. Hide one first.'); return; }
+        zones[i].visible = true;
+      }
+      render();
+    }
+
+    function removeZone(i) { zones.splice(i, 1); render(); }
+
+    function openColorPanel(idx, e) {
+      e.stopPropagation();
+      activeCardIdx = idx;
+      const panel = document.getElementById('colorPanel');
+      document.getElementById('panelTitle').textContent = idx === -1 ? 'Theme — all cards' : `Colour — ${zones[idx].city}`;
+      setTab('solid');
+      updateGradPreview();
+      const rect = e.target.closest('button').getBoundingClientRect();
+      panel.style.top = (rect.bottom + 6) + 'px';
+      panel.style.left = Math.min(rect.left, window.innerWidth - 240) + 'px';
+      panel.classList.add('open');
+    }
+
+    function closeColorPanel() {
+      document.getElementById('colorPanel').classList.remove('open');
+      activeCardIdx = null;
+    }
+
+    document.addEventListener('click', e => {
+      const panel = document.getElementById('colorPanel');
+      if (panel.classList.contains('open') && !panel.contains(e.target)) closeColorPanel();
+    });
+
+    function setTab(tab) {
+      currentTab = tab;
+      document.getElementById('tabSolid').classList.toggle('active', tab === 'solid');
+      document.getElementById('tabGrad').classList.toggle('active', tab === 'gradient');
+      document.getElementById('solidSection').style.display = tab === 'solid' ? '' : 'none';
+      document.getElementById('gradSection').style.display = tab === 'gradient' ? '' : 'none';
+    }
+
+    function setDir(dir, btn) {
+      gradDir = dir;
+      document.querySelectorAll('.gradient-dir button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      updateGradPreview();
+    }
+
+    function updateGradPreview() {
+      const from = document.getElementById('gradFrom').value;
+      const to = document.getElementById('gradTo').value;
+      document.getElementById('gradPreview').style.background = `linear-gradient(${gradDir}, ${from}, ${to})`;
+    }
+
+    function applyColor() {
+      let bg;
+      if (currentTab === 'solid') {
+        bg = document.getElementById('solidColor').value;
+      } else {
+        const from = document.getElementById('gradFrom').value;
+        const to = document.getElementById('gradTo').value;
+        bg = `linear-gradient(${gradDir}, ${from}, ${to})`;
+      }
+      if (activeCardIdx === -1) { zones.forEach(z => z.bg = bg); }
+      else if (activeCardIdx !== null) { zones[activeCardIdx].bg = bg; }
+      closeColorPanel();
+      render();
+    }
+
+    function toggleAdd() {
+      const panel = document.getElementById('addPanel');
+      panel.classList.toggle('open');
+      if (panel.classList.contains('open')) {
+        const sel = document.getElementById('tzSelect');
+        sel.innerHTML = ALL_TZ.map(([tz, city]) => `<option value="${tz}">${city} (${tz})</option>`).join('');
+        sel.onchange = () => { const m = ALL_TZ.find(([tz]) => tz === sel.value); if (m) document.getElementById('cityInput').value = m[1]; };
+        document.getElementById('cityInput').value = ALL_TZ[0][1];
+      }
+    }
+
+    function addZone() {
+      const tz = document.getElementById('tzSelect').value;
+      const city = document.getElementById('cityInput').value.trim() || tz.split('/').pop();
+      if (zones.find(z => z.tz === tz)) { alert('Already in your list.'); return; }
+      zones.push({ city, tz, label: '', home: false, visible: visibleCount() < 5, bg: null });
+      document.getElementById('addPanel').classList.remove('open');
+      render();
+    }
+
+    render();
+    setInterval(render, 1000);
+  </script>
+</body>
+</html>
