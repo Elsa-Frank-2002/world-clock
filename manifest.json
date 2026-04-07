@@ -1,0 +1,25 @@
+{
+  "name": "World Clock",
+  "short_name": "World Clock",
+  "description": "Track up to 5 timezones with custom colours, nicknames and layouts.",
+  "start_url": "/world-clock/",
+  "scope": "/world-clock/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f5f5f3",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

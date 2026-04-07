@@ -1,84 +1,97 @@
 # World Clock
 
-A lightweight, customisable world clock built with HTML, CSS, and JavaScript. No frameworks, no dependencies — just one file that works anywhere.
+A personal world clock built with vanilla HTML, CSS and JavaScript. No frameworks, no dependencies — works entirely in one folder.
 
-Live demo: [https://elsa-frank-2002.github.io/world-clock](https://elsa-frank-2002.github.io/world-clock)
+**Live demo:** https://elsa-frank-2002.github.io/world-clock
 
 ---
 
 ## Features
 
-- Live time display across up to 5 timezones simultaneously
+- Live time across up to 5 timezones, updating every second
 - Horizontal and vertical layout modes
-- Square cards in vertical mode for a clean widget-style look
-- 12hr / 24hr clock toggle
-- Sun and moon icons showing daytime or nighttime at a glance
-- Per-card colour customisation with solid or gradient options
+- Square cards in vertical mode for a clean widget look
+- 12hr / 24hr toggle
+- Sun and moon icons showing day or night at a glance
+- Custom nickname per card (e.g. `sisters_place`, `client-hq`)
+- Per-card colour with solid or gradient options
 - Global theme colour applied to all cards at once
-- Show / hide individual timezone cards
+- Show / hide individual cards (max 5 visible)
 - Drag and drop to reorder cards
-- Add timezones from a list of 30 cities worldwide
-- Dark mode support out of the box
-- Mobile friendly — works as a saved web app on your phone
+- Add timezones from 30 cities worldwide
+- All settings saved automatically per device/browser
+- Dark mode out of the box
+- Installable as a PWA on desktop and mobile (works offline)
 
 ---
 
-## How to use
+## Installing as an app (PWA)
 
-### View it live
-Visit the live demo link above — no installation needed.
+Once the site is live on GitHub Pages, any visitor can install it as a native-feeling app:
 
-### Run it locally
-1. Download or clone this repository
-2. Open `index.html` in any browser
-3. That's it!
+**iPhone / iPad**
+1. Open the link in Safari
+2. Tap the Share button (box with arrow)
+3. Tap "Add to Home Screen"
+4. Tap Add — it appears on your home screen like an app
 
-```bash
-git clone https://github.com/Elsa-Frank-2002/world-clock.git
-cd world-clock
-open index.html
-```
+**Android**
+1. Open the link in Chrome
+2. Tap the 3-dot menu
+3. Tap "Add to Home Screen" or "Install App"
+
+**Windows / Mac (Chrome or Edge)**
+1. Open the link
+2. Click the install icon in the address bar (screen with + symbol)
+3. Click Install — it opens in its own window like a desktop app
+
+Each user's settings (layout, colours, nicknames, clock format) are saved privately on their own device.
 
 ---
 
-## Project structure
+## Uploading to GitHub
+
+Your repo needs these 3 files:
 
 ```
 world-clock/
-└── index.html    # Everything lives here — HTML, CSS, and JavaScript
+├── index.html      ← the app
+├── manifest.json   ← makes it installable as a PWA
+└── sw.js           ← enables offline use
 ```
+
+To upload:
+1. Go to https://github.com/Elsa-Frank-2002/world-clock
+2. Click **Add file → Upload files**
+3. Drag all 3 files into the upload box
+4. Click **Commit changes**
+
+To enable the live URL:
+1. Go to **Settings → Pages**
+2. Under Branch, select **main** and click **Save**
+3. Wait ~60 seconds — your app is live at https://elsa-frank-2002.github.io/world-clock
 
 ---
 
-## Customisation
+## Customising default timezones
 
-To change the default timezones, open `index.html` and find the `zones` array near the top of the script section:
+Open `index.html` and find the `DEFAULT_ZONES` array:
 
 ```javascript
-let zones = [
-  { city: 'Bangalore', tz: 'Asia/Kolkata', label: 'IST', home: true, visible: true, bg: null },
-  { city: 'Dubai',     tz: 'Asia/Dubai',   label: 'GST', home: false, visible: true, bg: null },
+const DEFAULT_ZONES = [
+  { city: 'Bangalore', tz: 'Asia/Kolkata', label: 'IST', home: true, ... },
   ...
 ];
 ```
 
-- Change `city` to update the display name
-- Change `tz` to any valid [IANA timezone string](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)
-- Set `home: true` on your home city to highlight it with a blue border
-- Set `bg` to a hex colour or CSS gradient string to pre-set a card colour
+- Change `city` for the display name
+- Change `tz` to any [IANA timezone string](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)
+- Set `home: true` on your home city to highlight it
 
 ---
 
 ## Built with
 
-- Vanilla HTML, CSS, JavaScript
-- No external libraries or frameworks
-- SVG icons drawn inline
+Vanilla HTML, CSS and JavaScript — no libraries or frameworks. SVG icons drawn inline.
 
----
-
-## About
-
-Built by Elsa Frank as a portfolio project — a practical tool to track time across global teams, designed with a focus on clean UI and user experience.
-
-Designed and developed with the help of Claude (Anthropic).
+Built by Elsa Frank as a portfolio project, developed with Claude (Anthropic).
