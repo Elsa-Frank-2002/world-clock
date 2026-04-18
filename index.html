@@ -1,469 +1,1204 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-  <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="World Clock" />
-  <meta name="description" content="A personal world clock — track up to 5 timezones with custom colours, nicknames and layouts." />
-  <link rel="manifest" href="manifest.json" />
-  <link rel="apple-touch-icon" href="icon-192.png" />
-  <title>World Clock</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f3; color: #1a1a1a; min-height: 100vh; padding: 1rem 1.25rem 2rem; max-width: 900px; margin: 0 auto; }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>World Clock</title>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" id="metaThemeColor" content="#1a1a2e" />
+<style>
+/* ── THEME TOKENS ─────────────────────────────────────── */
 
-    .topbar { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 0 1rem; }
-    .topbar-title { font-size: 17px; font-weight: 500; color: #1a1a1a; }
-    .menu-wrap { position: relative; }
-    .menu-btn { background: none; border: 0.5px solid #ccc; border-radius: 8px; cursor: pointer; padding: 6px 11px; color: #1a1a1a; display: flex; align-items: center; gap: 3px; }
-    .menu-btn:hover { background: #ebebeb; }
-    .menu-dot { width: 4px; height: 4px; border-radius: 50%; background: currentColor; display: inline-block; }
-    .dropdown { position: absolute; right: 0; top: calc(100% + 6px); background: #fff; border: 0.5px solid #ddd; border-radius: 12px; min-width: 215px; z-index: 999; display: none; padding: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
-    .dropdown.open { display: block; }
-    .dd-section { font-size: 11px; color: #aaa; padding: 6px 8px 3px; text-transform: uppercase; letter-spacing: 0.05em; }
-    .dd-sep { height: 0.5px; background: #eee; margin: 4px 0; }
-    .dd-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; border-radius: 8px; gap: 8px; }
-    .dd-row span { font-size: 13px; color: #1a1a1a; }
-    .toggle-wrap { display: flex; border: 0.5px solid #ccc; border-radius: 8px; overflow: hidden; }
-    .toggle-wrap button { font-size: 12px; padding: 3px 10px; border: none; background: transparent; color: #888; cursor: pointer; }
-    .toggle-wrap button.active { background: #dbeafe; color: #1e40af; }
-    .dd-btn { width: 100%; text-align: left; font-size: 13px; padding: 7px 8px; border-radius: 8px; border: none; background: transparent; color: #1a1a1a; cursor: pointer; }
-    .dd-btn:hover { background: #f5f5f3; }
-    .dd-btn.danger { color: #dc2626; }
+:root, [data-theme="dark"] {
+  --bg:         #1a1a2e;
+  --bg2:        #16213e;
+  --card:       #0f3460;
+  --accent:     #e94560;
+  --text:       #eaeaea;
+  --muted:      #8892a4;
+  --border:     rgba(255,255,255,0.08);
+  --home-bdr:   #4fa3e0;
+  --shadow:     0 4px 24px rgba(0,0,0,0.4);
+  --badge-bg:   rgba(255,255,255,0.08);
+  --input-bg:   rgba(255,255,255,0.07);
+  --icon-hover: rgba(255,255,255,0.07);
+  --radius:     14px;
+}
 
-    .clock-container { display: grid; gap: 10px; }
-    .clock-container.horizontal { grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); }
-    .clock-container.vertical { grid-template-columns: 1fr; }
+[data-theme="light"] {
+  --bg:         #f0f4f8;
+  --bg2:        #ffffff;
+  --card:       #ffffff;
+  --accent:     #d63251;
+  --text:       #1a1a2e;
+  --muted:      #6b7280;
+  --border:     rgba(0,0,0,0.10);
+  --home-bdr:   #2563eb;
+  --shadow:     0 4px 20px rgba(0,0,0,0.10);
+  --badge-bg:   rgba(0,0,0,0.07);
+  --input-bg:   rgba(0,0,0,0.05);
+  --icon-hover: rgba(0,0,0,0.06);
+}
 
-    .clock-card { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 12px; padding: 10px 12px; cursor: grab; user-select: none; }
-    .clock-card.home { border: 2px solid #93c5fd; }
-    .clock-card.dragging { opacity: 0.35; }
-    .clock-card.drag-over { border-color: #93c5fd; border-style: dashed; }
-    .clock-card.hidden-card { opacity: 0.45; }
-    .clock-card.vertical-square { width: 100%; aspect-ratio: 1/1; max-width: 200px; }
+/* Custom — bg/bg2/card set as inline CSS vars on <html> by JS */
+[data-theme="custom"] {
+  --accent:     #e94560;
+  --text:       #eaeaea;
+  --muted:      #9aa3b0;
+  --border:     rgba(255,255,255,0.10);
+  --home-bdr:   #4fa3e0;
+  --shadow:     0 4px 24px rgba(0,0,0,0.45);
+  --badge-bg:   rgba(255,255,255,0.10);
+  --input-bg:   rgba(255,255,255,0.08);
+  --icon-hover: rgba(255,255,255,0.08);
+}
 
-    .card-actions { display: flex; align-items: center; gap: 5px; margin-bottom: 5px; }
-    .spacer { flex: 1; }
-    .btn-icon { background: none; border: none; cursor: pointer; padding: 0; line-height: 1; display: flex; align-items: center; color: #bbb; }
-    .btn-icon:hover { color: #333; }
+/* ── BASE ─────────────────────────────────────────────── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-    .city-row { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; flex-wrap: wrap; }
-    .city-label { font-size: 13px; font-weight: 500; color: #1a1a1a; }
-    .tz-badge { font-size: 11px; padding: 1px 6px; border-radius: 6px; background: rgba(0,0,0,0.07); color: #666; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+  transition: background 0.35s, color 0.25s;
+}
 
-    .nickname-display { font-size: 11px; color: #888; font-style: italic; cursor: pointer; padding: 2px 3px; border-radius: 4px; border: 0.5px dashed transparent; margin-bottom: 4px; display: inline-block; min-width: 60px; }
-    .nickname-display:hover { border-color: #ccc; }
-    .nickname-display.empty { color: #bbb; }
-    .nickname-editor { margin-bottom: 5px; display: none; }
-    .nickname-editor.open { display: block; }
-    .nickname-input { font-size: 12px; width: 100%; padding: 4px 7px; border: 0.5px solid #93c5fd; border-radius: 8px; background: #f0f7ff; color: #1a1a1a; outline: none; font-family: inherit; }
-    .nickname-hint { font-size: 10px; color: #aaa; display: flex; justify-content: space-between; margin: 2px 0 4px; }
-    .nickname-actions { display: flex; gap: 5px; }
-    .nickname-actions button { flex: 1; font-size: 11px; padding: 3px 0; border-radius: 8px; border: 0.5px solid #ccc; background: transparent; color: #1a1a1a; cursor: pointer; }
-    .nickname-actions button.ok { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+/* ── HEADER ── */
+.app-header {
+  text-align: center;
+  padding: 32px 20px 8px;
+}
 
-    .clock-time-wrap { display: flex; align-items: baseline; gap: 3px; }
-    .clock-time { font-size: 24px; font-weight: 500; color: #1a1a1a; letter-spacing: -0.5px; line-height: 1.1; font-variant-numeric: tabular-nums; }
-    .clock-ampm { font-size: 10px; font-weight: 500; color: #888; }
-    .clock-date { font-size: 11px; color: #666; margin: 2px 0 0; }
-    .clock-meta { font-size: 11px; color: #999; margin: 4px 0 0; display: flex; align-items: center; gap: 4px; }
-    .hidden-label { font-size: 11px; color: #aaa; margin: 2px 0 0; }
+.app-title {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  line-height: 1.1;
+}
 
-    .color-panel { position: fixed; z-index: 1000; background: #fff; border: 0.5px solid #ddd; border-radius: 12px; padding: 14px; min-width: 220px; display: none; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-    .color-panel.open { display: block; }
-    .color-panel h4 { font-size: 13px; font-weight: 500; margin: 0 0 10px; color: #1a1a1a; }
-    .color-panel label { font-size: 12px; color: #666; display: block; margin-bottom: 4px; }
-    .color-panel input[type=color] { width: 100%; height: 32px; border: 0.5px solid #ccc; border-radius: 8px; cursor: pointer; padding: 2px; background: none; margin-bottom: 10px; }
-    .tab-row { display: flex; margin-bottom: 12px; border: 0.5px solid #ccc; border-radius: 8px; overflow: hidden; }
-    .tab-row button { flex: 1; font-size: 12px; padding: 5px; border: none; background: transparent; color: #888; cursor: pointer; }
-    .tab-row button.active { background: #dbeafe; color: #1e40af; }
-    .gradient-row { display: flex; gap: 8px; margin-bottom: 8px; }
-    .gradient-row input[type=color] { flex: 1; height: 32px; border: 0.5px solid #ccc; border-radius: 8px; cursor: pointer; padding: 2px; background: none; margin: 0; }
-    .gradient-preview { height: 20px; border-radius: 8px; margin-bottom: 10px; border: 0.5px solid #e0e0e0; }
-    .gradient-dir { display: flex; gap: 6px; margin-bottom: 10px; }
-    .gradient-dir button { font-size: 11px; padding: 3px 8px; border-radius: 6px; border: 0.5px solid #ccc; background: transparent; color: #888; cursor: pointer; }
-    .gradient-dir button.active { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
-    .panel-row { display: flex; gap: 8px; }
-    .panel-row button { flex: 1; font-size: 12px; padding: 6px; border-radius: 8px; border: 0.5px solid #ccc; background: transparent; color: #1a1a1a; cursor: pointer; }
-    .panel-row button.primary { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+.app-title span { color: var(--accent); }
 
-    .add-panel { margin-top: 1rem; padding: 1rem; border: 0.5px solid #e0e0e0; border-radius: 12px; background: #f5f5f3; display: none; }
-    .add-panel.open { display: block; }
-    .add-panel select, .add-panel input[type=text] { width: 100%; margin-bottom: 8px; font-size: 14px; padding: 7px 10px; border: 0.5px solid #ccc; border-radius: 8px; background: #fff; color: #1a1a1a; }
-    .add-panel .row { display: flex; gap: 8px; }
-    .add-panel .row button { flex: 1; font-size: 13px; padding: 7px; border-radius: 8px; border: 0.5px solid #ccc; background: transparent; color: #1a1a1a; cursor: pointer; }
-    .add-panel .row button.primary { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+.app-subtitle {
+  font-size: 0.92rem;
+  color: var(--muted);
+  margin-top: 6px;
+  letter-spacing: 0.03em;
+}
 
-    .footer { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; }
-    .footer-text { font-size: 11px; color: #aaa; }
-    .saved-toast { font-size: 11px; color: #16a34a; opacity: 0; transition: opacity 0.4s; }
-    .saved-toast.show { opacity: 1; }
+/* ── TOOLBAR ── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 20px;
+  flex-wrap: wrap;
+}
 
-    @media (prefers-color-scheme: dark) {
-      body { background: #1a1a1a; color: #f0f0f0; }
-      .topbar-title { color: #f0f0f0; }
-      .menu-btn { border-color: #444; color: #f0f0f0; }
-      .menu-btn:hover { background: #2a2a2a; }
-      .dropdown { background: #2a2a2a; border-color: #444; box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
-      .dd-row span, .dd-btn { color: #f0f0f0; }
-      .dd-btn:hover { background: #333; }
-      .dd-btn.danger { color: #f87171; }
-      .dd-sep { background: #333; }
-      .toggle-wrap { border-color: #555; }
-      .toggle-wrap button { color: #aaa; }
-      .toggle-wrap button.active { background: #1e3a5f; color: #93c5fd; }
-      .clock-card { background: #2a2a2a; border-color: #3a3a3a; }
-      .clock-card.home { border-color: #3b82f6; }
-      .city-label, .clock-time { color: #f0f0f0; }
-      .tz-badge { background: rgba(255,255,255,0.1); color: #aaa; }
-      .clock-date { color: #aaa; }
-      .clock-meta, .hidden-label { color: #777; }
-      .btn-icon { color: #555; }
-      .btn-icon:hover { color: #f0f0f0; }
-      .nickname-display { color: #777; }
-      .nickname-display.empty { color: #555; }
-      .nickname-display:hover { border-color: #555; }
-      .nickname-input { background: #1e2d3d; border-color: #3b82f6; color: #f0f0f0; }
-      .nickname-actions button { border-color: #555; color: #f0f0f0; }
-      .nickname-actions button.ok { background: #1e3a5f; color: #93c5fd; border-color: #3b82f6; }
-      .nickname-hint { color: #666; }
-      .color-panel { background: #2a2a2a; border-color: #444; }
-      .color-panel h4 { color: #f0f0f0; }
-      .color-panel label { color: #aaa; }
-      .tab-row { border-color: #555; }
-      .tab-row button { color: #aaa; }
-      .tab-row button.active, .gradient-dir button.active, .panel-row button.primary, .add-panel .row button.primary { background: #1e3a5f; color: #93c5fd; border-color: #3b82f6; }
-      .gradient-dir button, .panel-row button { border-color: #555; color: #f0f0f0; }
-      .add-panel { background: #222; border-color: #3a3a3a; }
-      .add-panel select, .add-panel input[type=text] { background: #2a2a2a; color: #f0f0f0; border-color: #444; }
-      .add-panel .row button { border-color: #555; color: #f0f0f0; }
-      .footer-text { color: #666; }
-    }
+.toolbar-label {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
 
-    @media (max-width: 480px) {
-      body { padding: 0.75rem 1rem 2rem; }
-      .clock-container.horizontal { grid-template-columns: repeat(2, 1fr); }
-    }
-  </style>
+.btn-group {
+  display: flex;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.btn-group button {
+  background: none;
+  border: none;
+  color: var(--muted);
+  padding: 7px 13px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-family: inherit;
+  transition: background 0.18s, color 0.18s;
+}
+
+.btn-group button.active { background: var(--accent); color: #fff; }
+.btn-group button:not(:last-child) { border-right: 1px solid var(--border); }
+
+/* ── THEME SWITCHER ── */
+.theme-switcher {
+  display: flex;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.theme-switcher button {
+  background: none;
+  border: none;
+  color: var(--muted);
+  padding: 7px 11px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  transition: background 0.18s, color 0.18s;
+}
+
+.theme-switcher button.active { background: var(--accent); color: #fff; }
+.theme-switcher button:not(:last-child) { border-right: 1px solid var(--border); }
+
+/* ── GRID CONTROLS ── */
+.grid-controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.grid-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 5px 7px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.grid-btn.active { background: var(--accent); color: #fff; }
+.grid-btn svg { width: 16px; height: 16px; fill: currentColor; }
+
+.menu-btn {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 7px 13px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.15s;
+}
+
+.menu-btn:hover { filter: brightness(1.1); }
+
+/* ── CLOCKS WRAPPER ── */
+#clocks-wrapper {
+  padding: 10px 20px 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+#clocks {
+  display: grid;
+  gap: 16px;
+  transition: grid-template-columns 0.3s ease;
+}
+
+#clocks.layout-horizontal { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+#clocks.layout-vertical   { grid-template-columns: 1fr; max-width: 380px; margin: 0 auto; }
+#clocks.layout-grid-2     { grid-template-columns: repeat(2, 1fr); }
+#clocks.layout-grid-3     { grid-template-columns: repeat(3, 1fr); }
+#clocks.layout-grid-4     { grid-template-columns: repeat(4, 1fr); }
+
+/* ── CLOCK CARD ── */
+.clock-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 16px 14px;
+  position: relative;
+  cursor: grab;
+  user-select: none;
+  box-shadow: var(--shadow);
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.3s, background 0.3s;
+}
+
+.clock-card:active { cursor: grabbing; }
+
+.clock-card.home-card {
+  border: 2px solid var(--home-bdr);
+  box-shadow: 0 0 0 3px rgba(79,163,224,0.14), var(--shadow);
+}
+
+.clock-card.hidden-card { opacity: 0.35; }
+
+.clock-card.dragging {
+  transform: scale(1.04);
+  box-shadow: 0 14px 40px rgba(0,0,0,0.45);
+  z-index: 10;
+}
+
+.card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  gap: 6px;
+}
+
+.city-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.city-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tz-badge {
+  font-size: 0.68rem;
+  background: var(--badge-bg);
+  border-radius: 4px;
+  padding: 2px 6px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.home-star { font-size: 0.85rem; flex-shrink: 0; }
+.card-actions { display: flex; gap: 4px; flex-shrink: 0; }
+
+.icon-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 3px 5px;
+  border-radius: 5px;
+  font-size: 0.85rem;
+  line-height: 1;
+  transition: color 0.15s, background 0.15s;
+}
+
+.icon-btn:hover { color: var(--text); background: var(--icon-hover); }
+
+/* nickname */
+.nickname-row { min-height: 22px; margin-bottom: 6px; }
+
+.nickname-display {
+  font-size: 0.76rem;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nickname-display:hover { color: var(--text); }
+.nickname-editor { display: none; }
+
+.nickname-editor.open {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.nickname-editor input {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 5px;
+  padding: 3px 7px;
+  font-size: 0.76rem;
+  font-family: inherit;
+  width: 130px;
+  outline: none;
+}
+
+.nickname-editor input:focus { border-color: var(--accent); }
+.nick-char-count { font-size: 0.68rem; color: var(--muted); }
+
+.nick-save, .nick-cancel {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.nick-save { border-color: var(--home-bdr); color: var(--home-bdr); }
+
+/* time display */
+.time-display {
+  font-size: 2.1rem;
+  font-weight: 300;
+  letter-spacing: 0.03em;
+  line-height: 1;
+  margin-bottom: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ampm { font-size: 0.85rem; color: var(--muted); margin-left: 4px; vertical-align: middle; }
+.date-display { font-size: 0.75rem; color: var(--muted); margin-bottom: 4px; }
+.utc-offset   { font-size: 0.70rem; color: var(--muted); }
+
+.day-icon {
+  position: absolute;
+  top: 14px; right: 48px;
+  font-size: 1.1rem;
+  opacity: 0.75;
+}
+
+/* ── FLOATING MENU ── */
+.float-menu { position: fixed; inset: 0; z-index: 100; display: none; }
+.float-menu.open { display: block; }
+.float-menu-backdrop { position: absolute; inset: 0; }
+
+.float-menu-panel {
+  position: absolute;
+  top: 70px; right: 20px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  width: 290px;
+  padding: 18px;
+  z-index: 101;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.menu-section { margin-bottom: 18px; }
+.menu-section:last-child { margin-bottom: 0; }
+
+.menu-section-title {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.theme-btn {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 7px;
+  padding: 7px 12px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.83rem;
+  text-align: left;
+  transition: filter 0.15s;
+}
+
+.theme-btn:hover { filter: brightness(1.15); }
+
+.reset-btn {
+  width: 100%;
+  background: none;
+  border: 1px solid rgba(233,69,96,0.35);
+  color: var(--accent);
+  border-radius: 7px;
+  padding: 7px 12px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.83rem;
+  margin-top: 6px;
+  transition: background 0.15s;
+}
+
+.reset-btn:hover { background: rgba(233,69,96,0.08); }
+
+/* ── CARD COLOUR MODAL ── */
+.colour-modal {
+  position: fixed; inset: 0; z-index: 200;
+  display: none; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(4px);
+}
+
+.colour-modal.open { display: flex; }
+
+.colour-panel {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px; width: 310px;
+  box-shadow: var(--shadow);
+}
+
+.colour-panel h3 {
+  font-family: 'Times New Roman', serif;
+  font-size: 0.95rem;
+  color: var(--text);
+  margin-bottom: 14px;
+}
+
+.colour-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+
+.colour-tab {
+  flex: 1; background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 6px; padding: 6px;
+  cursor: pointer; font-family: inherit; font-size: 0.82rem;
+  transition: all 0.15s;
+}
+
+.colour-tab.active { border-color: var(--accent); color: var(--accent); }
+
+.colour-row {
+  display: flex; align-items: center;
+  gap: 10px; margin-bottom: 10px;
+  font-size: 0.82rem; color: var(--muted);
+}
+
+.colour-row input[type=color] {
+  width: 36px; height: 28px;
+  border: none; border-radius: 4px; cursor: pointer; background: none;
+}
+
+.direction-btns { display: flex; gap: 4px; flex-wrap: wrap; }
+
+.dir-btn {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  color: var(--text); border-radius: 5px;
+  padding: 4px 9px; cursor: pointer; font-size: 0.85rem;
+  transition: all 0.15s;
+}
+
+.dir-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+.colour-preview {
+  width: 100%; height: 36px;
+  border-radius: 7px; margin: 10px 0;
+  border: 1px solid var(--border);
+}
+
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+
+.btn-cancel, .btn-apply {
+  border: 1px solid var(--border);
+  background: none; color: var(--text);
+  border-radius: 6px; padding: 6px 16px;
+  cursor: pointer; font-family: inherit; font-size: 0.85rem;
+}
+
+.btn-apply { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* ── CUSTOM BG MODAL ── */
+.bg-modal {
+  position: fixed; inset: 0; z-index: 200;
+  display: none; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(4px);
+}
+
+.bg-modal.open { display: flex; }
+
+.bg-panel {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px; width: 340px;
+  box-shadow: var(--shadow);
+}
+
+.bg-panel h3 {
+  font-family: 'Times New Roman', serif;
+  font-size: 1.1rem; color: var(--text);
+  margin-bottom: 4px;
+}
+
+.bg-panel > p {
+  font-size: 0.79rem; color: var(--muted);
+  line-height: 1.45; margin-bottom: 16px;
+}
+
+.bg-presets {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.bg-preset {
+  width: 34px; height: 34px;
+  border-radius: 8px; border: 2px solid transparent;
+  cursor: pointer; flex-shrink: 0;
+  transition: border-color 0.15s, transform 0.15s;
+  position: relative;
+}
+
+.bg-preset:hover, .bg-preset.selected {
+  border-color: var(--accent); transform: scale(1.12);
+}
+
+.bg-preset.selected::after {
+  content: '✓';
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+}
+
+.bg-custom-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 14px;
+}
+
+.bg-custom-row label { font-size: 0.82rem; color: var(--muted); flex: 1; }
+
+.bg-custom-row input[type=color] {
+  width: 44px; height: 34px;
+  border: none; border-radius: 6px;
+  cursor: pointer; background: none;
+}
+
+.bg-live-preview {
+  width: 100%; height: 52px;
+  border-radius: 10px; border: 1px solid var(--border);
+  margin-bottom: 14px;
+  transition: background 0.2s;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.45);
+  text-transform: uppercase;
+}
+
+/* ── ADD TIMEZONE ── */
+.tz-list {
+  max-height: 155px; overflow-y: auto;
+  display: flex; flex-direction: column;
+  gap: 4px; margin-top: 8px; padding-right: 4px;
+}
+
+.tz-list::-webkit-scrollbar { width: 4px; }
+.tz-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.tz-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 8px; border-radius: 6px;
+  background: var(--input-bg); font-size: 0.8rem;
+  cursor: pointer; transition: filter 0.15s;
+}
+
+.tz-item:hover { filter: brightness(1.15); }
+.tz-item .add-mark { font-size: 1rem; color: var(--home-bdr); }
+
+.tz-name-input {
+  background: var(--input-bg);
+  border: 1px solid var(--border); color: var(--text);
+  border-radius: 6px; padding: 5px 9px; font-size: 0.8rem;
+  width: 100%; margin-bottom: 6px; font-family: inherit; outline: none;
+}
+
+.tz-name-input:focus { border-color: var(--accent); }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 28px; left: 50%;
+  transform: translateX(-50%) translateY(60px);
+  background: #2a9d8f; color: #fff;
+  padding: 9px 20px; border-radius: 30px;
+  font-size: 0.85rem; font-weight: 600;
+  opacity: 0; pointer-events: none; z-index: 999;
+  transition: transform 0.3s, opacity 0.3s;
+  white-space: nowrap;
+}
+
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 640px) {
+  #clocks.layout-grid-3,
+  #clocks.layout-grid-4  { grid-template-columns: repeat(2, 1fr); }
+  #clocks.layout-grid-2  { grid-template-columns: 1fr; }
+  .toolbar { gap: 6px; }
+  .app-title { font-size: 1.8rem; }
+  .theme-switcher button span { display: none; }
+}
+</style>
 </head>
 <body>
 
-<div class="topbar">
-  <span class="topbar-title">World Clock</span>
-  <div class="menu-wrap">
-    <button class="menu-btn" onclick="toggleMenu(event)" aria-label="Options">
-      <span class="menu-dot"></span><span class="menu-dot"></span><span class="menu-dot"></span>
+<!-- ── HEADER ── -->
+<header class="app-header">
+  <h1 class="app-title">🌐 World <span>Clock</span></h1>
+  <p class="app-subtitle">Track live times across your key cities — personalise cards, set colours, and install as an app.</p>
+</header>
+
+<!-- ── TOOLBAR ── -->
+<div class="toolbar">
+
+  <span class="toolbar-label">Format</span>
+  <div class="btn-group">
+    <button id="btn-24h" class="active" onclick="setFormat(24)">24h</button>
+    <button id="btn-12h"                onclick="setFormat(12)">12h</button>
+  </div>
+
+  <span class="toolbar-label">View</span>
+  <div class="grid-controls">
+    <button class="grid-btn active" id="gbtn-h" title="Auto-fit"     onclick="setLayout('horizontal')">
+      <svg viewBox="0 0 16 16"><rect x="0" y="1" width="4" height="14"/><rect x="6" y="1" width="4" height="14"/><rect x="12" y="1" width="4" height="14"/></svg>
     </button>
-    <div class="dropdown" id="dropdown">
-      <div class="dd-section">Layout</div>
-      <div class="dd-row">
-        <span>Orientation</span>
-        <div class="toggle-wrap">
-          <button id="btnH" class="active" onclick="setLayout('horizontal');event.stopPropagation()">H</button>
-          <button id="btnV" onclick="setLayout('vertical');event.stopPropagation()">V</button>
+    <button class="grid-btn" id="gbtn-v"        title="Single column" onclick="setLayout('vertical')">
+      <svg viewBox="0 0 16 16"><rect x="0" y="0" width="16" height="4"/><rect x="0" y="6" width="16" height="4"/><rect x="0" y="12" width="16" height="4"/></svg>
+    </button>
+    <button class="grid-btn" id="gbtn-2"        title="2 columns"     onclick="setLayout('grid-2')">
+      <svg viewBox="0 0 16 16"><rect x="0" y="0" width="7" height="7"/><rect x="9" y="0" width="7" height="7"/><rect x="0" y="9" width="7" height="7"/><rect x="9" y="9" width="7" height="7"/></svg>
+    </button>
+    <button class="grid-btn" id="gbtn-3"        title="3 columns"     onclick="setLayout('grid-3')">
+      <svg viewBox="0 0 16 16">
+        <rect x="0" y="0" width="4" height="7"/><rect x="6" y="0" width="4" height="7"/><rect x="12" y="0" width="4" height="7"/>
+        <rect x="0" y="9" width="4" height="7"/><rect x="6" y="9" width="4" height="7"/><rect x="12" y="9" width="4" height="7"/>
+      </svg>
+    </button>
+    <button class="grid-btn" id="gbtn-4"        title="4 columns"     onclick="setLayout('grid-4')">
+      <svg viewBox="0 0 16 16">
+        <rect x="0"   y="0" width="3" height="7"/><rect x="4.3" y="0" width="3" height="7"/>
+        <rect x="8.7" y="0" width="3" height="7"/><rect x="13"  y="0" width="3" height="7"/>
+        <rect x="0"   y="9" width="3" height="7"/><rect x="4.3" y="9" width="3" height="7"/>
+        <rect x="8.7" y="9" width="3" height="7"/><rect x="13"  y="9" width="3" height="7"/>
+      </svg>
+    </button>
+  </div>
+
+  <span class="toolbar-label">Theme</span>
+  <div class="theme-switcher">
+    <button id="tbtn-dark"   class="active" onclick="setTheme('dark')"  >🌙 <span>Dark</span></button>
+    <button id="tbtn-light"                  onclick="setTheme('light')" >☀️ <span>Light</span></button>
+    <button id="tbtn-custom"                 onclick="openBgModal()"     >🎨 <span>Custom</span></button>
+  </div>
+
+  <button class="menu-btn" onclick="toggleMenu()">⋯ Menu</button>
+</div>
+
+<!-- ── CLOCKS ── -->
+<div id="clocks-wrapper">
+  <div id="clocks" class="layout-horizontal"></div>
+</div>
+
+<!-- ── FLOATING MENU ── -->
+<div class="float-menu" id="floatMenu">
+  <div class="float-menu-backdrop" onclick="closeMenu()"></div>
+  <div class="float-menu-panel">
+
+    <div class="menu-section">
+      <div class="menu-section-title">Colours</div>
+      <button class="theme-btn" onclick="openThemeColour()">🎨 Theme colour for all cards</button>
+    </div>
+
+    <div class="menu-section">
+      <div class="menu-section-title">Timezones</div>
+      <input class="tz-name-input" id="tzCustomName" placeholder="Custom display name (optional)" maxlength="24" />
+      <div class="tz-list" id="tzList"></div>
+      <button class="reset-btn" onclick="resetAll()">↺ Reset all to default</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── CARD COLOUR MODAL ── -->
+<div class="colour-modal" id="colourModal">
+  <div class="colour-panel">
+    <h3>Card colour</h3>
+    <div class="colour-tabs">
+      <button class="colour-tab active" id="tabSolid"    onclick="setColourTab('solid')">Solid</button>
+      <button class="colour-tab"        id="tabGradient" onclick="setColourTab('gradient')">Gradient</button>
+    </div>
+    <div id="solidSection">
+      <div class="colour-row">
+        <label>Pick a colour</label>
+        <input type="color" id="solidColour" value="#0f3460" oninput="updatePreview()" />
+      </div>
+    </div>
+    <div id="gradientSection" style="display:none">
+      <div class="colour-row">
+        <label>From</label><input type="color" id="gradFrom" value="#0f3460" oninput="updatePreview()" />
+        <label>To</label>  <input type="color" id="gradTo"   value="#e94560" oninput="updatePreview()" />
+      </div>
+      <div class="colour-row" style="flex-direction:column;align-items:flex-start;gap:6px">
+        <label>Direction</label>
+        <div class="direction-btns">
+          <button class="dir-btn active" data-dir="to right"        onclick="setDir(this,'to right')">→</button>
+          <button class="dir-btn"        data-dir="to bottom"       onclick="setDir(this,'to bottom')">↓</button>
+          <button class="dir-btn"        data-dir="to bottom right" onclick="setDir(this,'to bottom right')">↘</button>
+          <button class="dir-btn"        data-dir="to bottom left"  onclick="setDir(this,'to bottom left')">↙</button>
         </div>
       </div>
-      <div class="dd-row">
-        <span>Clock format</span>
-        <div class="toggle-wrap">
-          <button id="btn24" class="active" onclick="setClock(false);event.stopPropagation()">24h</button>
-          <button id="btn12" onclick="setClock(true);event.stopPropagation()">12h</button>
-        </div>
-      </div>
-      <div class="dd-sep"></div>
-      <div class="dd-section">Colours</div>
-      <button class="dd-btn" onclick="openColorPanel(-1,event)">🎨 Theme for all cards</button>
-      <div class="dd-sep"></div>
-      <div class="dd-section">Timezones</div>
-      <button class="dd-btn" onclick="toggleAdd();closeMenu()">+ Add a timezone</button>
-      <div class="dd-sep"></div>
-      <button class="dd-btn danger" onclick="resetAll()">↺ Reset all to default</button>
+    </div>
+    <div class="colour-preview" id="colourPreview"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeColour()">Cancel</button>
+      <button class="btn-apply"  onclick="applyColour()">Apply</button>
     </div>
   </div>
 </div>
 
-<div class="clock-container horizontal" id="clockGrid"></div>
-
-<div class="add-panel" id="addPanel">
-  <select id="tzSelect"></select>
-  <input type="text" id="cityInput" placeholder="Display name (e.g. New York)" />
-  <div class="row">
-    <button onclick="toggleAdd()">Cancel</button>
-    <button class="primary" onclick="addZone()">Add</button>
-  </div>
-</div>
-
-<div class="footer">
-  <span class="footer-text" id="footerText"></span>
-  <span class="saved-toast" id="savedToast">✓ Saved</span>
-</div>
-
-<div class="color-panel" id="colorPanel">
-  <h4 id="panelTitle">Card colour</h4>
-  <div class="tab-row">
-    <button id="tabSolid" class="active" onclick="setTab('solid')">Solid</button>
-    <button id="tabGrad" onclick="setTab('gradient')">Gradient</button>
-  </div>
-  <div id="solidSection">
-    <label>Pick a colour</label>
-    <input type="color" id="solidColor" value="#ffffff">
-  </div>
-  <div id="gradSection" style="display:none">
-    <label>From → To</label>
-    <div class="gradient-row">
-      <input type="color" id="gradFrom" value="#B5D4F4" oninput="updateGradPreview()">
-      <input type="color" id="gradTo" value="#EEEDFE" oninput="updateGradPreview()">
+<!-- ── CUSTOM BG MODAL ── -->
+<div class="bg-modal" id="bgModal">
+  <div class="bg-panel">
+    <h3>🎨 Custom Background</h3>
+    <p>Choose a background colour for the entire app. Cards and panels adapt automatically.</p>
+    <div class="bg-presets" id="bgPresets"></div>
+    <div class="bg-custom-row">
+      <label>Pick any colour</label>
+      <input type="color" id="bgCustomColour" value="#1a1a2e" oninput="bgPickerChange()" />
     </div>
-    <div class="gradient-preview" id="gradPreview"></div>
-    <label>Direction</label>
-    <div class="gradient-dir">
-      <button class="active" onclick="setDir('to right',this)">→</button>
-      <button onclick="setDir('to bottom',this)">↓</button>
-      <button onclick="setDir('to bottom right',this)">↘</button>
-      <button onclick="setDir('to bottom left',this)">↙</button>
+    <div class="bg-live-preview" id="bgLivePreview">Preview</div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeBgModal()">Cancel</button>
+      <button class="btn-apply"  onclick="applyCustomBg()">Apply</button>
     </div>
   </div>
-  <div class="panel-row">
-    <button onclick="closeColorPanel()">Cancel</button>
-    <button class="primary" onclick="applyColor()">Apply</button>
-  </div>
 </div>
+
+<!-- ── TOAST ── -->
+<div class="toast" id="toast">✓ Saved</div>
 
 <script>
-const STORAGE_KEY = 'worldclock_v1';
-const ALL_TZ = [
-  ['Africa/Cairo','Cairo'],['Africa/Lagos','Lagos'],['Africa/Nairobi','Nairobi'],
-  ['America/Chicago','Chicago'],['America/Los_Angeles','Los Angeles'],['America/New_York','New York'],
-  ['America/Sao_Paulo','São Paulo'],['America/Toronto','Toronto'],['America/Vancouver','Vancouver'],
-  ['Asia/Bangkok','Bangkok'],['Asia/Dubai','Dubai'],['Asia/Hong_Kong','Hong Kong'],
-  ['Asia/Jakarta','Jakarta'],['Asia/Karachi','Karachi'],['Asia/Kolkata','Bangalore'],
-  ['Asia/Kuala_Lumpur','Kuala Lumpur'],['Asia/Seoul','Seoul'],['Asia/Shanghai','Shanghai'],
-  ['Asia/Singapore','Singapore'],['Asia/Tokyo','Tokyo'],['Australia/Sydney','Sydney'],
-  ['Europe/Amsterdam','Amsterdam'],['Europe/Berlin','Berlin'],['Europe/Istanbul','Istanbul'],
-  ['Europe/London','London'],['Europe/Moscow','Moscow'],['Europe/Paris','Paris'],
-  ['Pacific/Auckland','Auckland'],['Pacific/Honolulu','Honolulu'],['UTC','UTC'],
-];
+// ═══════════════ STATE ═══════════════
+
 const DEFAULT_ZONES = [
-  {city:'Bangalore',tz:'Asia/Kolkata',label:'IST',home:true,visible:true,bg:null,nickname:''},
-  {city:'Dubai',tz:'Asia/Dubai',label:'GST',home:false,visible:true,bg:null,nickname:''},
-  {city:'UTC',tz:'UTC',label:'UTC',home:false,visible:true,bg:null,nickname:''},
-  {city:'São Paulo',tz:'America/Sao_Paulo',label:'BRT',home:false,visible:true,bg:null,nickname:''},
-  {city:'Chicago',tz:'America/Chicago',label:'CDT',home:false,visible:true,bg:null,nickname:''},
+  {city:'Bangalore',tz:'Asia/Kolkata',     badge:'IST',home:true },
+  {city:'Dubai',    tz:'Asia/Dubai',       badge:'GST',home:false},
+  {city:'UTC',      tz:'UTC',              badge:'UTC',home:false},
+  {city:'São Paulo',tz:'America/Sao_Paulo',badge:'BRT',home:false},
+  {city:'Chicago',  tz:'America/Chicago',  badge:'CDT',home:false},
 ];
 
-function loadState(){try{const r=localStorage.getItem(STORAGE_KEY);return r?JSON.parse(r):null;}catch(e){return null;}}
-function saveState(){
+const ALL_ZONES = [
+  {city:'New York',    tz:'America/New_York',    badge:'EST'},
+  {city:'Los Angeles', tz:'America/Los_Angeles', badge:'PST'},
+  {city:'Chicago',     tz:'America/Chicago',     badge:'CDT'},
+  {city:'São Paulo',   tz:'America/Sao_Paulo',   badge:'BRT'},
+  {city:'London',      tz:'Europe/London',       badge:'GMT'},
+  {city:'Paris',       tz:'Europe/Paris',        badge:'CET'},
+  {city:'Berlin',      tz:'Europe/Berlin',       badge:'CET'},
+  {city:'Moscow',      tz:'Europe/Moscow',       badge:'MSK'},
+  {city:'Dubai',       tz:'Asia/Dubai',          badge:'GST'},
+  {city:'Bangalore',   tz:'Asia/Kolkata',        badge:'IST'},
+  {city:'Mumbai',      tz:'Asia/Kolkata',        badge:'IST'},
+  {city:'Delhi',       tz:'Asia/Kolkata',        badge:'IST'},
+  {city:'Colombo',     tz:'Asia/Colombo',        badge:'SLST'},
+  {city:'Dhaka',       tz:'Asia/Dhaka',          badge:'BST'},
+  {city:'Bangkok',     tz:'Asia/Bangkok',        badge:'ICT'},
+  {city:'Singapore',   tz:'Asia/Singapore',      badge:'SGT'},
+  {city:'Hong Kong',   tz:'Asia/Hong_Kong',      badge:'HKT'},
+  {city:'Shanghai',    tz:'Asia/Shanghai',       badge:'CST'},
+  {city:'Tokyo',       tz:'Asia/Tokyo',          badge:'JST'},
+  {city:'Seoul',       tz:'Asia/Seoul',          badge:'KST'},
+  {city:'Sydney',      tz:'Australia/Sydney',    badge:'AEDT'},
+  {city:'Auckland',    tz:'Pacific/Auckland',    badge:'NZDT'},
+  {city:'Honolulu',    tz:'Pacific/Honolulu',    badge:'HST'},
+  {city:'Nairobi',     tz:'Africa/Nairobi',      badge:'EAT'},
+  {city:'Lagos',       tz:'Africa/Lagos',        badge:'WAT'},
+  {city:'Cairo',       tz:'Africa/Cairo',        badge:'EET'},
+  {city:'Johannesburg',tz:'Africa/Johannesburg', badge:'SAST'},
+  {city:'Karachi',     tz:'Asia/Karachi',        badge:'PKT'},
+  {city:'Riyadh',      tz:'Asia/Riyadh',         badge:'AST'},
+  {city:'UTC',         tz:'UTC',                 badge:'UTC'},
+];
+
+const BG_PRESETS = [
+  {hex:'#1a1a2e',label:'Midnight'}, {hex:'#0d1b2a',label:'Abyss'},
+  {hex:'#1b2838',label:'Steam'},    {hex:'#0a0a0a',label:'Pitch'},
+  {hex:'#1c1c1e',label:'Carbon'},   {hex:'#1e3a2f',label:'Forest'},
+  {hex:'#1a1a3e',label:'Indigo'},   {hex:'#2d1b4e',label:'Plum'},
+  {hex:'#2b1d0e',label:'Walnut'},   {hex:'#0e2040',label:'Ocean'},
+  {hex:'#3a2020',label:'Crimson'},  {hex:'#1e2d1e',label:'Moss'},
+];
+
+let state = {
+  layout:'horizontal', format:24,
+  theme:'dark', customBg:'#1a1a2e',
+  zones: DEFAULT_ZONES.map(z=>({...z,visible:true,colour:null,nickname:''})),
+};
+
+// ═══════════════ PERSIST ═══════════════
+
+function save(){
+  try{ localStorage.setItem('wc3',JSON.stringify(state)); }catch(e){}
+  showToast();
+}
+
+function load(){
   try{
-    localStorage.setItem(STORAGE_KEY,JSON.stringify({zones,layout,use12hr}));
-    const t=document.getElementById('savedToast');
-    t.classList.add('show');clearTimeout(t._to);
-    t._to=setTimeout(()=>t.classList.remove('show'),1500);
+    const r=localStorage.getItem('wc3');
+    if(r){ const p=JSON.parse(r); state={...state,...p}; }
   }catch(e){}
 }
-function resetAll(){
-  if(!confirm('Reset everything to default?'))return;
-  localStorage.removeItem(STORAGE_KEY);
-  zones=JSON.parse(JSON.stringify(DEFAULT_ZONES));
-  layout='horizontal';use12hr=false;
-  closeMenu();applyPrefs();buildCards();
+
+// ═══════════════ TOAST ═══════════════
+
+let _tt;
+function showToast(){
+  const t=document.getElementById('toast');
+  t.classList.add('show');
+  clearTimeout(_tt);
+  _tt=setTimeout(()=>t.classList.remove('show'),1800);
 }
 
-let zones,layout,use12hr;
-const saved=loadState();
-if(saved){zones=saved.zones.map(z=>({nickname:'',...z}));layout=saved.layout||'horizontal';use12hr=saved.use12hr||false;}
-else{zones=JSON.parse(JSON.stringify(DEFAULT_ZONES));layout='horizontal';use12hr=false;}
+// ═══════════════ LAYOUT ═══════════════
 
-let dragSrc=null,activeCardIdx=null,gradDir='to right',currentTab='solid';
+function setLayout(m){ state.layout=m; applyLayout(); save(); }
 
-function applyPrefs(){
-  document.getElementById('btnH').classList.toggle('active',layout==='horizontal');
-  document.getElementById('btnV').classList.toggle('active',layout==='vertical');
-  document.getElementById('btn24').classList.toggle('active',!use12hr);
-  document.getElementById('btn12').classList.toggle('active',use12hr);
-}
-function isDaytime(tz){const h=parseInt(new Date().toLocaleString('en-US',{timeZone:tz,hour:'numeric',hour12:false}));return h>=6&&h<20;}
-function getOffset(tz){
-  const now=new Date();
-  const diff=(new Date(now.toLocaleString('en-US',{timeZone:tz}))-new Date(now.toLocaleString('en-US',{timeZone:'UTC'})))/3600000;
-  const sign=diff>=0?'+':'-';const abs=Math.abs(diff);const h=Math.floor(abs);const m=Math.round((abs-h)*60);
-  return `UTC${sign}${h}${m?':'+String(m).padStart(2,'0'):''}`;
+function applyLayout(){
+  const c=document.getElementById('clocks');
+  c.className='layout-'+state.layout;
+  const map={h:'horizontal',v:'vertical','2':'grid-2','3':'grid-3','4':'grid-4'};
+  Object.entries(map).forEach(([k,v])=>
+    document.getElementById('gbtn-'+k)?.classList.toggle('active',state.layout===v));
 }
 
-const sunSVG=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#BA7517" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.93" y1="4.93" x2="7.05" y2="7.05"/><line x1="16.95" y1="16.95" x2="19.07" y2="19.07"/><line x1="4.93" y1="19.07" x2="7.05" y2="16.95"/><line x1="16.95" y1="7.05" x2="19.07" y2="4.93"/></svg>`;
-const moonSVG=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#534AB7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
-const eyeOnSVG=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
-const eyeOffSVG=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
-const rmSVG=`<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
-const palSVG=`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>`;
+// ═══════════════ FORMAT ═══════════════
 
-function visibleCount(){return zones.filter(z=>z.visible).length;}
-function sanitise(v){return v.replace(/[^a-zA-Z0-9_-]/g,'').slice(0,20);}
-
-function openNicknameEditor(i){
-  document.getElementById(`nn-disp-${i}`).style.display='none';
-  const ed=document.getElementById(`nn-editor-${i}`);
-  ed.classList.add('open');
-  const inp=document.getElementById(`nn-input-${i}`);
-  inp.value=zones[i].nickname||'';
-  updateHint(i);
-  setTimeout(()=>{inp.focus();inp.select();},20);
-}
-function saveNickname(i){
-  zones[i].nickname=sanitise(document.getElementById(`nn-input-${i}`).value);
-  saveState();closeNicknameEditor(i);
-}
-function closeNicknameEditor(i){
-  document.getElementById(`nn-editor-${i}`).classList.remove('open');
-  const disp=document.getElementById(`nn-disp-${i}`);
-  disp.style.display='';
-  disp.textContent=zones[i].nickname||'add a nickname…';
-  disp.className='nickname-display'+(zones[i].nickname?'':' empty');
-}
-function updateHint(i){
-  const inp=document.getElementById(`nn-input-${i}`);if(!inp)return;
-  const clean=sanitise(inp.value);if(inp.value!==clean)inp.value=clean;
-  const hint=document.getElementById(`nn-hint-${i}`);
-  if(hint)hint.innerHTML=`<span>${20-clean.length} chars left</span><span>letters, numbers, - _</span>`;
+function setFormat(f){
+  state.format=f;
+  document.getElementById('btn-24h').classList.toggle('active',f===24);
+  document.getElementById('btn-12h').classList.toggle('active',f===12);
+  save();
 }
 
-function buildCards(){
-  const grid=document.getElementById('clockGrid');
-  grid.innerHTML='';
-  grid.className='clock-container '+layout;
-  zones.forEach((z,i)=>{
-    const card=document.createElement('div');
-    card.id=`card-${i}`;
-    card.className='clock-card'+(z.home?' home':'')+(!z.visible?' hidden-card':'')+(layout==='vertical'?' vertical-square':'');
-    card.draggable=true;
-    if(z.bg)card.style.background=z.bg;
-    card.innerHTML=`
-      <div class="card-actions">
-        <button class="btn-icon" title="Card colour" onclick="openColorPanel(${i},event)">${palSVG}</button>
-        <div class="spacer"></div>
-        <button class="btn-icon" onclick="toggleVisible(${i})">${z.visible?eyeOnSVG:eyeOffSVG}</button>
-        ${z.home?'':` <button class="btn-icon" onclick="removeZone(${i})">${rmSVG}</button>`}
-      </div>
-      <div class="city-row">
-        <p class="city-label">${z.city}${z.home?' ★':''}</p>
-        <span class="tz-badge">${z.label||z.tz.split('/').pop()}</span>
-      </div>
-      <div id="nn-disp-${i}" class="nickname-display${z.nickname?'':' empty'}" onclick="openNicknameEditor(${i})">${z.nickname||'add a nickname…'}</div>
-      <div id="nn-editor-${i}" class="nickname-editor">
-        <input id="nn-input-${i}" class="nickname-input" type="text" maxlength="20" placeholder="e.g. sisters_place"
-          oninput="updateHint(${i})"
-          onkeydown="if(event.key==='Enter'){saveNickname(${i});event.preventDefault();}if(event.key==='Escape'){closeNicknameEditor(${i});}"
-          onmousedown="event.stopPropagation()" ondragstart="event.stopPropagation()" />
-        <div id="nn-hint-${i}" class="nickname-hint"><span>20 chars left</span><span>letters, numbers, - _</span></div>
-        <div class="nickname-actions">
-          <button onclick="closeNicknameEditor(${i})">Cancel</button>
-          <button class="ok" onclick="saveNickname(${i})">Save</button>
-        </div>
-      </div>
-      ${z.visible
-        ?`<div class="clock-time-wrap" id="time-${i}"></div><p class="clock-date" id="date-${i}"></p><p class="clock-meta" id="meta-${i}"></p>`
-        :`<p class="hidden-label">Hidden — click eye to show</p>`}
-    `;
-    card.addEventListener('dragstart',e=>{if(e.target.tagName==='INPUT'){e.preventDefault();return;}dragSrc=i;card.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
-    card.addEventListener('dragend',()=>{card.classList.remove('dragging');document.querySelectorAll('.clock-card').forEach(c=>c.classList.remove('drag-over'));});
-    card.addEventListener('dragover',e=>{e.preventDefault();card.classList.add('drag-over');});
-    card.addEventListener('dragleave',()=>card.classList.remove('drag-over'));
-    card.addEventListener('drop',e=>{e.preventDefault();if(dragSrc!==null&&dragSrc!==i){const mv=zones.splice(dragSrc,1)[0];zones.splice(i,0,mv);dragSrc=null;saveState();buildCards();}});
-    grid.appendChild(card);
-  });
-  tickClocks();
+// ═══════════════ THEME ═══════════════
+
+function setTheme(name){ state.theme=name; applyTheme(); save(); }
+
+function lightenHex(hex,amt){
+  const n=parseInt(hex.replace('#',''),16);
+  const r=Math.min(255,(n>>16)+amt);
+  const g=Math.min(255,((n>>8)&0xff)+amt);
+  const b=Math.min(255,(n&0xff)+amt);
+  return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
 }
 
-function tickClocks(){
-  const now=new Date();
-  zones.forEach((z,i)=>{
-    const timeEl=document.getElementById(`time-${i}`);
-    const dateEl=document.getElementById(`date-${i}`);
-    const metaEl=document.getElementById(`meta-${i}`);
-    if(!timeEl||!z.visible)return;
-    const fullTime=now.toLocaleTimeString('en-US',{timeZone:z.tz,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:use12hr});
-    let td=fullTime,ampm='';
-    if(use12hr){const m=fullTime.match(/^(\d{1,2}:\d{2}:\d{2})\s*(AM|PM)$/i);if(m){td=m[1];ampm=m[2];}}
-    else{td=now.toLocaleTimeString('en-GB',{timeZone:z.tz,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});}
-    timeEl.innerHTML=`<span class="clock-time">${td}</span>${ampm?`<span class="clock-ampm">${ampm}</span>`:''}`;
-    if(dateEl)dateEl.textContent=now.toLocaleDateString('en-GB',{timeZone:z.tz,weekday:'short',day:'numeric',month:'short'});
-    if(metaEl){const day=isDaytime(z.tz);metaEl.innerHTML=`${day?sunSVG:moonSVG} ${day?'Daytime':'Night'} · ${getOffset(z.tz)}`;}
-  });
-  document.getElementById('footerText').textContent=`${visibleCount()} of 5 shown · ${use12hr?'12hr':'24hr'} · ${now.toLocaleTimeString()}`;
-}
+function applyTheme(){
+  const h=document.documentElement;
+  h.setAttribute('data-theme',state.theme);
 
-function toggleMenu(e){e.stopPropagation();document.getElementById('dropdown').classList.toggle('open');}
-function closeMenu(){document.getElementById('dropdown').classList.remove('open');}
-
-function openColorPanel(idx,e){
-  e.stopPropagation();closeMenu();activeCardIdx=idx;
-  document.getElementById('panelTitle').textContent=idx===-1?'Theme — all cards':`Colour — ${zones[idx].city}`;
-  setTab('solid');updateGradPreview();
-  const panel=document.getElementById('colorPanel');
-  const rect=e.target.closest('button').getBoundingClientRect();
-  panel.style.top=(rect.bottom+6)+'px';
-  panel.style.left=Math.min(rect.left,window.innerWidth-240)+'px';
-  panel.classList.add('open');
-}
-function closeColorPanel(){document.getElementById('colorPanel').classList.remove('open');activeCardIdx=null;}
-function setTab(tab){
-  currentTab=tab;
-  document.getElementById('tabSolid').classList.toggle('active',tab==='solid');
-  document.getElementById('tabGrad').classList.toggle('active',tab==='gradient');
-  document.getElementById('solidSection').style.display=tab==='solid'?'':'none';
-  document.getElementById('gradSection').style.display=tab==='gradient'?'':'none';
-}
-function setDir(dir,btn){gradDir=dir;document.querySelectorAll('.gradient-dir button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');updateGradPreview();}
-function updateGradPreview(){document.getElementById('gradPreview').style.background=`linear-gradient(${gradDir},${document.getElementById('gradFrom').value},${document.getElementById('gradTo').value})`;}
-function applyColor(){
-  const bg=currentTab==='solid'?document.getElementById('solidColor').value:`linear-gradient(${gradDir},${document.getElementById('gradFrom').value},${document.getElementById('gradTo').value})`;
-  if(activeCardIdx===-1){zones.forEach(z=>z.bg=bg);}else if(activeCardIdx!==null){zones[activeCardIdx].bg=bg;}
-  closeColorPanel();saveState();buildCards();
-}
-
-function setLayout(l){layout=l;applyPrefs();saveState();buildCards();}
-function setClock(h){use12hr=h;applyPrefs();saveState();buildCards();}
-function toggleVisible(i){
-  if(zones[i].visible){zones[i].visible=false;}
-  else{if(visibleCount()>=5){alert('Max 5 visible. Hide one first.');return;}zones[i].visible=true;}
-  saveState();buildCards();
-}
-function removeZone(i){zones.splice(i,1);saveState();buildCards();}
-function toggleAdd(){
-  const p=document.getElementById('addPanel');p.classList.toggle('open');
-  if(p.classList.contains('open')){
-    const sel=document.getElementById('tzSelect');
-    sel.innerHTML=ALL_TZ.map(([tz,city])=>`<option value="${tz}">${city} (${tz})</option>`).join('');
-    sel.onchange=()=>{const m=ALL_TZ.find(([tz])=>tz===sel.value);if(m)document.getElementById('cityInput').value=m[1];};
-    document.getElementById('cityInput').value=ALL_TZ[0][1];
+  if(state.theme==='custom'){
+    const bg=state.customBg;
+    h.style.setProperty('--bg',bg);
+    h.style.setProperty('--bg2',lightenHex(bg,8));
+    h.style.setProperty('--card',lightenHex(bg,16));
+    document.getElementById('metaThemeColor').content=bg;
+  } else {
+    h.style.removeProperty('--bg');
+    h.style.removeProperty('--bg2');
+    h.style.removeProperty('--card');
+    document.getElementById('metaThemeColor').content=
+      state.theme==='light'?'#f0f4f8':'#1a1a2e';
   }
-}
-function addZone(){
-  const tz=document.getElementById('tzSelect').value;
-  const city=document.getElementById('cityInput').value.trim()||tz.split('/').pop();
-  if(zones.find(z=>z.tz===tz)){alert('Already in your list.');return;}
-  zones.push({city,tz,label:'',home:false,visible:visibleCount()<5,bg:null,nickname:''});
-  document.getElementById('addPanel').classList.remove('open');
-  saveState();buildCards();
+
+  document.getElementById('tbtn-dark').classList.toggle('active',  state.theme==='dark');
+  document.getElementById('tbtn-light').classList.toggle('active', state.theme==='light');
+  document.getElementById('tbtn-custom').classList.toggle('active',state.theme==='custom');
 }
 
-document.addEventListener('click',e=>{
-  const cp=document.getElementById('colorPanel');
-  if(cp.classList.contains('open')&&!cp.contains(e.target))closeColorPanel();
-  const dd=document.getElementById('dropdown');
-  if(dd.classList.contains('open')&&!document.querySelector('.menu-wrap').contains(e.target))closeMenu();
-});
+// ═══════════════ CUSTOM BG MODAL ═══════════════
 
-if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+let _pendingBg='#1a1a2e';
+
+function openBgModal(){
+  _pendingBg=state.customBg;
+  document.getElementById('bgCustomColour').value=_pendingBg;
+  renderBgPresets();
+  updateBgPreview(_pendingBg);
+  document.getElementById('bgModal').classList.add('open');
 }
 
-applyPrefs();
-buildCards();
-setInterval(tickClocks,1000);
+function closeBgModal(){ document.getElementById('bgModal').classList.remove('open'); }
+
+function renderBgPresets(){
+  const c=document.getElementById('bgPresets');
+  c.innerHTML='';
+  BG_PRESETS.forEach(p=>{
+    const b=document.createElement('button');
+    b.className='bg-preset'+(p.hex===_pendingBg?' selected':'');
+    b.style.background=p.hex; b.title=p.label;
+    b.onclick=()=>{ _pendingBg=p.hex; document.getElementById('bgCustomColour').value=p.hex; updateBgPreview(p.hex); renderBgPresets(); };
+    c.appendChild(b);
+  });
+}
+
+function bgPickerChange(){
+  _pendingBg=document.getElementById('bgCustomColour').value;
+  updateBgPreview(_pendingBg); renderBgPresets();
+}
+
+function updateBgPreview(hex){
+  document.getElementById('bgLivePreview').style.background=
+    `linear-gradient(to right, ${hex} 30%, ${lightenHex(hex,20)})`;
+}
+
+function applyCustomBg(){
+  state.customBg=_pendingBg; state.theme='custom';
+  applyTheme(); closeBgModal(); save();
+}
+
+// ═══════════════ TIME HELPERS ═══════════════
+
+function isDaytime(tz){
+  const h=parseInt(new Intl.DateTimeFormat('en-GB',{timeZone:tz,hour:'2-digit',hour12:false}).format(new Date()));
+  return h>=6&&h<20;
+}
+
+function getUTCOffset(tz){
+  const s=new Intl.DateTimeFormat('en-US',{timeZone:tz,timeZoneName:'shortOffset'}).format(new Date());
+  const m=s.match(/GMT([+-]\d+(?::\d+)?)/i);
+  return m?'UTC'+m[1]:'UTC+0';
+}
+
+// ═══════════════ RENDER ═══════════════
+
+function renderCards(){
+  const C=document.getElementById('clocks');
+  C.innerHTML='';
+  state.zones.forEach((z,i)=>C.appendChild(buildCard(z,i)));
+  applyLayout(); setupDrag();
+}
+
+function buildCard(z,i){
+  const div=document.createElement('div');
+  div.className='clock-card'+(z.home?' home-card':'')+(!z.visible?' hidden-card':'');
+  div.dataset.idx=i;
+
+  if(z.colour){
+    div.style.background=z.colour.type==='solid'
+      ?z.colour.value
+      :`linear-gradient(${z.colour.dir},${z.colour.from},${z.colour.to})`;
+  }
+
+  // day icon
+  const icon=document.createElement('div');
+  icon.className='day-icon'; icon.id='dayicon-'+i;
+  div.appendChild(icon);
+
+  // top row
+  const top=document.createElement('div'); top.className='card-top';
+  const cr=document.createElement('div'); cr.className='city-row';
+  cr.innerHTML=`<span class="city-name">${z.city}</span>
+                <span class="tz-badge">${z.badge}</span>
+                ${z.home?'<span class="home-star">★</span>':''}`;
+  top.appendChild(cr);
+
+  const acts=document.createElement('div'); acts.className='card-actions';
+
+  const pal=document.createElement('button');
+  pal.className='icon-btn'; pal.title='Card colour'; pal.textContent='🎨';
+  pal.onclick=()=>openColour(i); acts.appendChild(pal);
+
+  const eye=document.createElement('button');
+  eye.className='icon-btn'; eye.title=z.visible?'Hide':'Show';
+  eye.textContent=z.visible?'👁':'🙈'; eye.onclick=()=>toggleVisible(i);
+  acts.appendChild(eye);
+
+  if(!z.home){
+    const rm=document.createElement('button');
+    rm.className='icon-btn'; rm.title='Remove';
+    rm.textContent='✕'; rm.style.color='#e94560';
+    rm.onclick=()=>removeZone(i); acts.appendChild(rm);
+  }
+
+  top.appendChild(acts); div.appendChild(top);
+
+  // nickname
+  const nr=document.createElement('div'); nr.className='nickname-row';
+  const nd=document.createElement('div'); nd.className='nickname-display'; nd.id='nd-'+i;
+  nd.onclick=()=>openNickEditor(i);
+  nd.innerHTML=z.nickname?`✏️ <em>${z.nickname}</em>`:`<span style="opacity:.5">✏️ Add nickname</span>`;
+
+  const ne=document.createElement('div'); ne.className='nickname-editor'; ne.id='ne-'+i;
+  const ni=document.createElement('input');
+  ni.maxLength=20; ni.value=z.nickname||''; ni.placeholder='Nickname…';
+  const nc_el=document.createElement('span'); nc_el.className='nick-char-count';
+  nc_el.textContent=(z.nickname||'').length+'/20';
+  ni.oninput=()=>{ const v=ni.value.replace(/[^a-zA-Z0-9\-_]/g,''); ni.value=v; nc_el.textContent=v.length+'/20'; };
+  ni.onkeydown=e=>{ if(e.key==='Enter') saveNick(i,ni.value); if(e.key==='Escape') closeNickEditor(i); };
+
+  const ns=document.createElement('button'); ns.className='nick-save'; ns.textContent='Save';
+  ns.onclick=()=>saveNick(i,ni.value);
+  const ncan=document.createElement('button'); ncan.className='nick-cancel'; ncan.textContent='Cancel';
+  ncan.onclick=()=>closeNickEditor(i);
+
+  ne.append(ni,nc_el,ns,ncan); nr.append(nd,ne); div.appendChild(nr);
+
+  // time
+  const te=document.createElement('div'); te.className='time-display'; te.id='time-'+i;
+  const de=document.createElement('div'); de.className='date-display'; de.id='date-'+i;
+  const oe=document.createElement('div'); oe.className='utc-offset'; oe.textContent=getUTCOffset(z.tz);
+  div.append(te,de,oe);
+  return div;
+}
+
+// ═══════════════ TICK ═══════════════
+
+function tick(){
+  const now=new Date();
+  state.zones.forEach((z,i)=>{
+    const te=document.getElementById('time-'+i);
+    const de=document.getElementById('date-'+i);
+    const ie=document.getElementById('dayicon-'+i);
+    if(!te) return;
+
+    if(state.format===12){
+      const s=new Intl.DateTimeFormat('en-US',{timeZone:z.tz,hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true}).format(now);
+      const [t,ap]=s.split(' ');
+      te.innerHTML=`${t}<span class="ampm">${ap}</span>`;
+    } else {
+      te.textContent=new Intl.DateTimeFormat('en-GB',{timeZone:z.tz,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(now);
+    }
+
+    de.textContent=new Intl.DateTimeFormat('en-GB',{timeZone:z.tz,weekday:'short',day:'numeric',month:'short'}).format(now);
+    if(ie) ie.textContent=isDaytime(z.tz)?'☀️':'🌙';
+  });
+}
+
+// ═══════════════ ACTIONS ═══════════════
+
+function toggleVisible(i){ state.zones[i].visible=!state.zones[i].visible; save(); renderCards(); }
+function removeZone(i)    { state.zones.splice(i,1); save(); renderCards(); }
+
+function openNickEditor(i) { document.getElementById('nd-'+i).style.display='none'; document.getElementById('ne-'+i).classList.add('open'); }
+function closeNickEditor(i){ document.getElementById('nd-'+i).style.display='';     document.getElementById('ne-'+i).classList.remove('open'); }
+function saveNick(i,val)   { state.zones[i].nickname=val.trim(); save(); renderCards(); }
+
+// card colour
+let _ct=null, _ctab='solid', _gdir='to right';
+
+function openColour(idx){
+  _ct=idx; setColourTab('solid');
+  const ex=state.zones[idx]?.colour;
+  if(ex?.type==='gradient'){
+    setColourTab('gradient');
+    document.getElementById('gradFrom').value=ex.from;
+    document.getElementById('gradTo').value=ex.to;
+    _gdir=ex.dir;
+    document.querySelectorAll('.dir-btn').forEach(b=>b.classList.toggle('active',b.dataset.dir===_gdir));
+  } else if(ex?.type==='solid'){
+    document.getElementById('solidColour').value=ex.value;
+  }
+  updatePreview();
+  document.getElementById('colourModal').classList.add('open');
+}
+
+function openThemeColour(){ _ct='theme'; setColourTab('solid'); updatePreview(); document.getElementById('colourModal').classList.add('open'); }
+function closeColour(){ document.getElementById('colourModal').classList.remove('open'); }
+
+function setColourTab(tab){
+  _ctab=tab;
+  document.getElementById('tabSolid').classList.toggle('active',   tab==='solid');
+  document.getElementById('tabGradient').classList.toggle('active',tab==='gradient');
+  document.getElementById('solidSection').style.display   =tab==='solid'   ?'':'none';
+  document.getElementById('gradientSection').style.display=tab==='gradient'?'':'none';
+  updatePreview();
+}
+
+function setDir(btn,dir){
+  _gdir=dir;
+  document.querySelectorAll('.dir-btn').forEach(b=>b.classList.toggle('active',b===btn));
+  updatePreview();
+}
+
+function updatePreview(){
+  document.getElementById('colourPreview').style.background=_ctab==='solid'
+    ?document.getElementById('solidColour').value
+    :`linear-gradient(${_gdir},${document.getElementById('gradFrom').value},${document.getElementById('gradTo').value})`;
+}
+
+function applyColour(){
+  const colour=_ctab==='solid'
+    ?{type:'solid',value:document.getElementById('solidColour').value}
+    :{type:'gradient',from:document.getElementById('gradFrom').value,to:document.getElementById('gradTo').value,dir:_gdir};
+  if(_ct==='theme') state.zones.forEach(z=>z.colour=JSON.parse(JSON.stringify(colour)));
+  else state.zones[_ct].colour=colour;
+  closeColour(); save(); renderCards();
+}
+
+// menu / tz management
+function toggleMenu(){
+  const m=document.getElementById('floatMenu');
+  m.classList.toggle('open');
+  if(m.classList.contains('open')) buildTZList();
+}
+
+function closeMenu(){ document.getElementById('floatMenu').classList.remove('open'); }
+
+function buildTZList(){
+  const list=document.getElementById('tzList');
+  list.innerHTML='';
+  const ex=new Set(state.zones.map(z=>z.tz));
+  ALL_ZONES.forEach(z=>{
+    const item=document.createElement('div'); item.className='tz-item';
+    const already=ex.has(z.tz);
+    item.innerHTML=`<span>${z.city} <span style="color:var(--muted);font-size:.72rem">${z.badge}</span></span><span class="add-mark">${already?'✓':'+'}</span>`;
+    if(!already) item.onclick=()=>addZone(z);
+    list.appendChild(item);
+  });
+}
+
+function addZone(z){
+  if(state.zones.length>=10){alert('Max 10 timezones.');return;}
+  const n=document.getElementById('tzCustomName').value.trim();
+  state.zones.push({city:z.city,tz:z.tz,badge:z.badge,home:false,visible:true,colour:null,nickname:n||''});
+  document.getElementById('tzCustomName').value='';
+  save(); renderCards(); buildTZList();
+}
+
+function resetAll(){
+  if(!confirm('Reset all to default?')) return;
+  state.zones=DEFAULT_ZONES.map(z=>({...z,visible:true,colour:null,nickname:''}));
+  state.layout='horizontal'; state.format=24; state.theme='dark'; state.customBg='#1a1a2e';
+  applyTheme(); applyLayout(); setFormat(24); save(); renderCards(); closeMenu();
+}
+
+// drag & drop
+function setupDrag(){
+  let dragged=null;
+  document.querySelectorAll('.clock-card').forEach(card=>{
+    card.draggable=true;
+    card.addEventListener('dragstart',()=>{dragged=card;setTimeout(()=>card.classList.add('dragging'),0);});
+    card.addEventListener('dragend',()=>{card.classList.remove('dragging');dragged=null;});
+    card.addEventListener('dragover',e=>{
+      e.preventDefault();
+      if(dragged&&dragged!==card){
+        const all=[...document.querySelectorAll('.clock-card')];
+        const from=all.indexOf(dragged),to=all.indexOf(card);
+        if(from!==-1&&to!==-1){
+          state.zones.splice(to,0,state.zones.splice(from,1)[0]);
+          renderCards(); save();
+        }
+      }
+    });
+  });
+}
+
+// ═══════════════ INIT ═══════════════
+load();
+applyTheme();
+setFormat(state.format);
+applyLayout();
+renderCards();
+tick();
+setInterval(tick,1000);
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
 </html>

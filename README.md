@@ -1,97 +1,149 @@
-# World Clock
+# 🌐 World Clock
 
-A personal world clock built with vanilla HTML, CSS and JavaScript. No frameworks, no dependencies — works entirely in one folder.
+A personal world clock web app — installable as a desktop or mobile widget (PWA).
 
-**Live demo:** https://elsa-frank-2002.github.io/world-clock
+**Live URL:** https://elsa-frank-2002.github.io/world-clock
+
+---
+
+## Default Timezones
+
+| City | Zone | Badge |
+|---|---|---|
+| ⭐ Bangalore (Home) | Asia/Kolkata | IST |
+| Dubai | Asia/Dubai | GST |
+| UTC | UTC | UTC |
+| São Paulo | America/Sao_Paulo | BRT |
+| Chicago | America/Chicago | CDT |
 
 ---
 
 ## Features
 
-- Live time across up to 5 timezones, updating every second
-- Horizontal and vertical layout modes
-- Square cards in vertical mode for a clean widget look
-- 12hr / 24hr toggle
-- Sun and moon icons showing day or night at a glance
-- Custom nickname per card (e.g. `sisters_place`, `client-hq`)
-- Per-card colour with solid or gradient options
-- Global theme colour applied to all cards at once
-- Show / hide individual cards (max 5 visible)
+### Display
+- Live time updating every second
+- ☀️ / 🌙 sun/moon icons for day vs night per city
+- Date display per card (weekday, day, month)
+- UTC offset shown on every card
+- Bangalore marked as home with a ★ star and blue border
+
+### Theme & Appearance
+- **Dark mode** — deep navy palette (default)
+- **Light mode** — clean white/grey palette
+- **Custom background** — choose any colour for the entire app
+  - 12 curated preset swatches (Midnight, Abyss, Forest, Plum, Ocean, etc.)
+  - Free-pick colour wheel for any hex colour
+  - Cards and panels adapt automatically to match
+  - Live preview before applying
+- Theme selection saved per-device
+
+### Layout / View
+Five grid options toggled from the toolbar:
+
+| Button | Mode | Description |
+|---|---|---|
+| ⊞ | Auto-fit | Cards fill the row responsively (default) |
+| ☰ | Single column | Stacked vertical cards |
+| ⊞ | 2-column grid | Fixed two columns |
+| ⊞ | 3-column grid | Fixed three columns |
+| ⊞ | 4-column grid | Fixed four columns |
+
+On mobile, 3-col and 4-col automatically collapse to 2 columns.
+
+### Clock Format
+- **24h** (default) and **12h** toggle in the toolbar
+- AM/PM shown small beside the time in 12h mode
+
+### Cards
+- City name + timezone badge on the same row
+- Custom nickname field below the city name
+  - Click ✏️ to open an inline editor
+  - Stays open until Save, Enter, or Cancel
+  - Max 20 characters — letters, numbers, `-` and `_` only
+  - Live character counter while typing
+- 🎨 Palette icon — set a solid colour or gradient per card
+- 👁 Eye icon — show/hide the card (hidden cards stay faded in the list)
+- ✕ Remove icon (non-home cards only)
 - Drag and drop to reorder cards
-- Add timezones from 30 cities worldwide
-- All settings saved automatically per device/browser
-- Dark mode out of the box
-- Installable as a PWA on desktop and mobile (works offline)
+
+### Card Colours
+- Per-card colour picker (solid or gradient)
+- **Gradient:** pick two colours, choose direction (→ ↓ ↘ ↙), live preview
+- **"Theme colour for all cards"** option in the ⋯ Menu applies a colour to every card at once
+
+### Timezone Management
+- Up to 10 timezones (5 visible by default, hidden ones stay faded)
+- Add from a list of 30 cities worldwide
+- Optional custom display name when adding
+- **Reset all to default** option in ⋯ Menu
+
+### Save / Restore
+- All settings auto-saved to `localStorage` on every change
+- Saves: layout, clock format, theme, custom background, card order, visibility, colours, nicknames
+- Per-device / per-browser — each user keeps their own settings independently
+- ✓ Saved toast confirmation on every change
+
+### PWA — Installable as an App
+- Works offline via service worker (`sw.js`)
+- Installable on:
+  - **iPhone / iPad** — Safari → Share → Add to Home Screen
+  - **Android** — Chrome → ⋮ → Install app
+  - **Windows / Mac** — Chrome or Edge → install icon in address bar
 
 ---
 
-## Installing as an app (PWA)
+## Files
 
-Once the site is live on GitHub Pages, any visitor can install it as a native-feeling app:
-
-**iPhone / iPad**
-1. Open the link in Safari
-2. Tap the Share button (box with arrow)
-3. Tap "Add to Home Screen"
-4. Tap Add — it appears on your home screen like an app
-
-**Android**
-1. Open the link in Chrome
-2. Tap the 3-dot menu
-3. Tap "Add to Home Screen" or "Install App"
-
-**Windows / Mac (Chrome or Edge)**
-1. Open the link
-2. Click the install icon in the address bar (screen with + symbol)
-3. Click Install — it opens in its own window like a desktop app
-
-Each user's settings (layout, colours, nicknames, clock format) are saved privately on their own device.
+| File | Purpose |
+|---|---|
+| `index.html` | Entire app — HTML, CSS, JavaScript (single file) |
+| `manifest.json` | PWA metadata for install prompt |
+| `sw.js` | Service worker for offline support |
+| `README.md` | This file |
 
 ---
 
-## Uploading to GitHub
+## Setup / Deployment
 
-Your repo needs these 3 files:
+No build step required — it's a single HTML file.
+
+```bash
+# Clone the repo
+git clone https://github.com/Elsa-Frank-2002/world-clock.git
+cd world-clock
+
+# Open locally
+open index.html          # macOS
+start index.html         # Windows
+```
+
+For the PWA features (offline, install prompt) to work you need to serve over HTTPS — GitHub Pages does this automatically.
+
+```bash
+# Deploy: just push to main, GitHub Pages serves it
+git add .
+git commit -m "Update"
+git push
+```
+
+---
+
+## Repo Structure
 
 ```
 world-clock/
-├── index.html      ← the app
-├── manifest.json   ← makes it installable as a PWA
-└── sw.js           ← enables offline use
+├── index.html       ← entire app
+├── manifest.json    ← PWA install metadata
+├── sw.js            ← service worker (offline cache)
+└── README.md
 ```
-
-To upload:
-1. Go to https://github.com/Elsa-Frank-2002/world-clock
-2. Click **Add file → Upload files**
-3. Drag all 3 files into the upload box
-4. Click **Commit changes**
-
-To enable the live URL:
-1. Go to **Settings → Pages**
-2. Under Branch, select **main** and click **Save**
-3. Wait ~60 seconds — your app is live at https://elsa-frank-2002.github.io/world-clock
 
 ---
 
-## Customising default timezones
+## Tech Stack
 
-Open `index.html` and find the `DEFAULT_ZONES` array:
-
-```javascript
-const DEFAULT_ZONES = [
-  { city: 'Bangalore', tz: 'Asia/Kolkata', label: 'IST', home: true, ... },
-  ...
-];
-```
-
-- Change `city` for the display name
-- Change `tz` to any [IANA timezone string](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)
-- Set `home: true` on your home city to highlight it
+Vanilla HTML · CSS custom properties · JavaScript (no frameworks, no build tools)
 
 ---
 
-## Built with
-
-Vanilla HTML, CSS and JavaScript — no libraries or frameworks. SVG icons drawn inline.
-
-Built by Elsa Frank as a portfolio project, developed with Claude (Anthropic).
+*Made with ☕ — deploy it, install it, make it yours.*
