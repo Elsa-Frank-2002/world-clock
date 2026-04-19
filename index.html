@@ -1,429 +1,541 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>World Clock</title>
-<link rel="manifest" href="manifest.json"/>
-<meta name="theme-color" id="metaThemeColor" content="#1a1a2e"/>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" id="metaThemeColor" content="#1a1a2e" />
 <style>
 /* ── THEME TOKENS ── */
-:root,[data-theme="dark"]{
-  --bg:#1a1a2e; --bg2:#16213e; --card:#0f3460;
-  --accent:#e94560; --text:#eaeaea; --muted:#8892a4;
-  --border:rgba(255,255,255,.09); --home-bdr:#4fa3e0;
-  --shadow:0 4px 24px rgba(0,0,0,.4);
-  --badge-bg:rgba(255,255,255,.09); --input-bg:rgba(255,255,255,.07);
-  --icon-hover:rgba(255,255,255,.08); --radius:14px;
+:root, [data-theme="dark"] {
+  --bg: #1a1a2e;
+  --bg2: #16213e;
+  --card: #0f3460;
+  --accent: #e94560;
+  --text: #eaeaea;
+  --muted: #8892a4;
+  --border: rgba(255,255,255,0.09);
+  --home-bdr: #4fa3e0;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --badge-bg: rgba(255,255,255,0.09);
+  --input-bg: rgba(255,255,255,0.07);
+  --icon-hover: rgba(255,255,255,0.08);
+  --radius: 14px;
 }
-[data-theme="light"]{
-  --bg:#f0f4f8; --bg2:#fff; --card:#fff;
-  --accent:#d63251; --text:#1a1a2e; --muted:#6b7280;
-  --border:rgba(0,0,0,.10); --home-bdr:#2563eb;
-  --shadow:0 4px 20px rgba(0,0,0,.10);
-  --badge-bg:rgba(0,0,0,.07); --input-bg:rgba(0,0,0,.05);
-  --icon-hover:rgba(0,0,0,.06);
+[data-theme="light"] {
+  --bg: #f0f4f8;
+  --bg2: #ffffff;
+  --card: #ffffff;
+  --accent: #d63251;
+  --text: #1a1a2e;
+  --muted: #6b7280;
+  --border: rgba(0,0,0,0.10);
+  --home-bdr: #2563eb;
+  --shadow: 0 4px 20px rgba(0,0,0,0.10);
+  --badge-bg: rgba(0,0,0,0.07);
+  --input-bg: rgba(0,0,0,0.05);
+  --icon-hover: rgba(0,0,0,0.06);
 }
-[data-theme="custom"]{
-  --accent:#e94560; --text:#eaeaea; --muted:#9aa3b0;
-  --border:rgba(255,255,255,.10); --home-bdr:#4fa3e0;
-  --shadow:0 4px 24px rgba(0,0,0,.45);
-  --badge-bg:rgba(255,255,255,.10); --input-bg:rgba(255,255,255,.08);
-  --icon-hover:rgba(255,255,255,.08);
+/* Custom — bg/bg2/card/text/muted set via JS inline on <html> */
+[data-theme="custom"] {
+  --accent: #e94560;
+  --border: rgba(255,255,255,0.10);
+  --home-bdr: #4fa3e0;
+  --shadow: 0 4px 24px rgba(0,0,0,0.45);
+  --badge-bg: rgba(255,255,255,0.10);
+  --input-bg: rgba(255,255,255,0.08);
+  --icon-hover: rgba(255,255,255,0.08);
 }
 
 /* ── RESET ── */
-*{box-sizing:border-box;margin:0;padding:0;}
-html,body{
-  width:100%; min-height:100vh;
-  background:var(--bg); color:var(--text);
-  font-family:'Segoe UI',system-ui,sans-serif;
-  transition:background .35s,color .25s;
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  width: 100%;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  transition: background 0.35s, color 0.25s;
 }
 
 /* ── HEADER ── */
-.app-header{text-align:center;padding:28px 20px 6px;}
-.app-title{
-  font-family:'Times New Roman',Times,serif;
-  font-size:clamp(1.8rem,5vw,3rem);font-weight:700;
-  letter-spacing:.04em;color:var(--text);line-height:1.1;
+.app-header { text-align: center; padding: 28px 20px 6px; }
+.app-title {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: clamp(1.8rem, 5vw, 3rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  line-height: 1.1;
 }
-.app-title span{color:var(--accent);}
-.app-subtitle{font-size:.88rem;color:var(--muted);margin-top:5px;letter-spacing:.03em;}
+.app-title span { color: var(--accent); }
+/* FIX 4: subtitle about the clock, not the app features */
+.app-subtitle {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin-top: 5px;
+  letter-spacing: 0.03em;
+}
 
 /* ── TOOLBAR ── */
-.toolbar{
-  display:flex;align-items:center;justify-content:center;
-  gap:8px;padding:10px 16px 12px;flex-wrap:wrap;
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px 12px;
+  flex-wrap: wrap;
 }
-.toolbar-label{
-  font-size:.7rem;color:var(--muted);font-weight:700;
-  text-transform:uppercase;letter-spacing:.06em;
+.toolbar-label {
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
+.pill-group {
+  display: flex;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.pill-group button {
+  background: none;
+  border: none;
+  color: var(--muted);
+  padding: 6px 11px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  transition: background 0.18s, color 0.18s;
+}
+.pill-group button.active { background: var(--accent); color: #fff; }
+.pill-group button:not(:last-child) { border-right: 1px solid var(--border); }
+.pill-group .grid-btn { padding: 5px 7px; }
+.pill-group svg { width: 15px; height: 15px; fill: currentColor; display: block; }
 
-/* pill group shared style */
-.pill-group{
-  display:flex;background:var(--bg2);
-  border:1px solid var(--border);border-radius:8px;overflow:hidden;
+.menu-btn {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: filter 0.15s;
 }
-.pill-group button{
-  background:none;border:none;color:var(--muted);
-  padding:6px 11px;cursor:pointer;font-size:.8rem;
-  font-family:inherit;display:flex;align-items:center;gap:4px;
-  white-space:nowrap;transition:background .18s,color .18s;
+.menu-btn:hover { filter: brightness(1.12); }
+
+/* ── CLOCKS WRAPPER ──
+   FIX 1: no max-width here so grid modes fill the page properly */
+#clocks-wrapper {
+  width: 100%;
+  padding: 8px 16px 40px;
 }
-.pill-group button.active{background:var(--accent);color:#fff;}
-.pill-group button:not(:last-child){border-right:1px solid var(--border);}
-
-/* grid icon buttons */
-.pill-group .grid-btn{padding:5px 7px;}
-.pill-group svg{width:15px;height:15px;fill:currentColor;display:block;}
-
-.menu-btn{
-  background:var(--bg2);border:1px solid var(--border);
-  color:var(--text);border-radius:8px;padding:6px 12px;
-  cursor:pointer;font-size:1rem;transition:filter .15s;
+#clocks {
+  display: grid;
+  gap: 14px;
+  width: 100%;
 }
-.menu-btn:hover{filter:brightness(1.12);}
+/* Each layout class sets only columns; JS sets max-width only for vertical */
+#clocks.layout-horizontal { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+#clocks.layout-vertical   { grid-template-columns: 1fr; }
+#clocks.layout-grid-2     { grid-template-columns: repeat(2, 1fr); }
+#clocks.layout-grid-3     { grid-template-columns: repeat(3, 1fr); }
+#clocks.layout-grid-4     { grid-template-columns: repeat(4, 1fr); }
 
-/* ── CLOCKS WRAPPER ── */
-#clocks-wrapper{
-  /* fills the available width minus side padding */
-  width:100%;
-  padding:8px 16px 40px;
+/* ── CLOCK CARD ──
+   FIX 3: pure flex column, no absolutely-positioned children */
+.clock-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 13px 13px 11px;
+  cursor: grab;
+  user-select: none;
+  box-shadow: var(--shadow);
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.3s, background 0.3s;
+  overflow: hidden;
+  color: var(--text);
 }
-
-#clocks{
-  display:grid;
-  gap:14px;
-  width:100%;
-  /* default = horizontal auto-fit */
-  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-  transition:grid-template-columns .25s ease;
+.clock-card:active { cursor: grabbing; }
+.clock-card.home-card {
+  border: 2px solid var(--home-bdr);
+  box-shadow: 0 0 0 3px rgba(79,163,224,0.14), var(--shadow);
 }
+.clock-card.hidden-card { opacity: 0.35; }
+.clock-card.dragging { transform: scale(1.03); box-shadow: 0 14px 40px rgba(0,0,0,0.45); z-index: 10; }
 
-/* Grid layout classes — all width:100% so they actually use the space */
-#clocks.layout-horizontal{grid-template-columns:repeat(auto-fit,minmax(200px,1fr));}
-#clocks.layout-vertical  {grid-template-columns:1fr;max-width:400px;margin:0 auto;}
-#clocks.layout-grid-2    {grid-template-columns:repeat(2,1fr);}
-#clocks.layout-grid-3    {grid-template-columns:repeat(3,1fr);}
-#clocks.layout-grid-4    {grid-template-columns:repeat(4,1fr);}
-
-/* ── CLOCK CARD ── */
-.clock-card{
-  /* no absolute positioning for internal elements */
-  display:flex;flex-direction:column;gap:0;
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:14px 14px 12px;
-  cursor:grab;user-select:none;
-  box-shadow:var(--shadow);
-  transition:transform .15s,box-shadow .15s,opacity .3s,background .3s;
-  overflow:hidden;
-  /* text colour is inherited; JS overrides per-card via data-contrast */
-  color:var(--text);
-}
-.clock-card:active{cursor:grabbing;}
-.clock-card.home-card{
-  border:2px solid var(--home-bdr);
-  box-shadow:0 0 0 3px rgba(79,163,224,.14),var(--shadow);
-}
-.clock-card.hidden-card{opacity:.35;}
-.clock-card.dragging{transform:scale(1.03);box-shadow:0 14px 40px rgba(0,0,0,.45);z-index:10;}
-
-/* When a card has a light background, force dark text */
-.clock-card[data-contrast="dark"]{color:#111 !important;}
-.clock-card[data-contrast="dark"] .card-meta,
+/* FIX 2: auto text contrast when card has a custom colour
+   "dark" contrast = light background → dark text
+   "light" contrast = dark background → light text  */
+.clock-card[data-contrast="dark"] { color: #111 !important; }
 .clock-card[data-contrast="dark"] .city-name,
-.clock-card[data-contrast="dark"] .tz-badge,
 .clock-card[data-contrast="dark"] .time-display,
 .clock-card[data-contrast="dark"] .date-display,
-.clock-card[data-contrast="dark"] .utc-offset,
-.clock-card[data-contrast="dark"] .temp-display,
+.clock-card[data-contrast="dark"] .card-meta,
 .clock-card[data-contrast="dark"] .nickname-display,
-.clock-card[data-contrast="dark"] .ampm{color:#111 !important;}
-.clock-card[data-contrast="dark"] .tz-badge{background:rgba(0,0,0,.12);}
-.clock-card[data-contrast="dark"] .icon-btn{color:rgba(0,0,0,.55);}
-.clock-card[data-contrast="dark"] .icon-btn:hover{background:rgba(0,0,0,.08);color:#111;}
+.clock-card[data-contrast="dark"] .ampm { color: #111 !important; }
+.clock-card[data-contrast="dark"] .tz-badge { background: rgba(0,0,0,0.12); color: #333; }
+.clock-card[data-contrast="dark"] .home-star { color: #b8860b; }
+.clock-card[data-contrast="dark"] .icon-btn { color: rgba(0,0,0,0.45); }
+.clock-card[data-contrast="dark"] .icon-btn:hover { background: rgba(0,0,0,0.08); color: #111; }
 
-.clock-card[data-contrast="light"]{color:#eaeaea !important;}
-.clock-card[data-contrast="light"] .card-meta,
+.clock-card[data-contrast="light"] { color: #eaeaea !important; }
 .clock-card[data-contrast="light"] .city-name,
-.clock-card[data-contrast="light"] .tz-badge,
 .clock-card[data-contrast="light"] .time-display,
 .clock-card[data-contrast="light"] .date-display,
-.clock-card[data-contrast="light"] .utc-offset,
-.clock-card[data-contrast="light"] .temp-display,
+.clock-card[data-contrast="light"] .card-meta,
 .clock-card[data-contrast="light"] .nickname-display,
-.clock-card[data-contrast="light"] .ampm{color:rgba(255,255,255,.88) !important;}
-.clock-card[data-contrast="light"] .tz-badge{background:rgba(255,255,255,.15);}
-.clock-card[data-contrast="light"] .icon-btn{color:rgba(255,255,255,.6);}
-.clock-card[data-contrast="light"] .icon-btn:hover{background:rgba(255,255,255,.12);color:#fff;}
+.clock-card[data-contrast="light"] .ampm { color: #eaeaea !important; }
+.clock-card[data-contrast="light"] .tz-badge { background: rgba(255,255,255,0.18); color: #eee; }
+.clock-card[data-contrast="light"] .icon-btn { color: rgba(255,255,255,0.55); }
+.clock-card[data-contrast="light"] .icon-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
 
-/* ── CARD ROW 1: city + actions ── */
-.card-top{
-  display:flex;align-items:flex-start;
-  justify-content:space-between;gap:6px;
-  margin-bottom:6px;
+/* ── ROW 1: city name + badge + star | action buttons ──
+   All in normal flow — no absolute positioning anywhere on the card */
+.card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 5px;
 }
-.city-row{
-  display:flex;align-items:center;gap:5px;
-  flex-wrap:wrap;flex:1;min-width:0;
+.city-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
 }
-.city-name{
-  font-size:.92rem;font-weight:700;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+.city-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text);
 }
-.tz-badge{
-  font-size:.65rem;background:var(--badge-bg);
-  border-radius:4px;padding:2px 5px;
-  color:inherit;opacity:.7;white-space:nowrap;
+.tz-badge {
+  font-size: 0.65rem;
+  background: var(--badge-bg);
+  border-radius: 4px;
+  padding: 2px 5px;
+  color: var(--muted);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
-.home-star{font-size:.8rem;flex-shrink:0;color:gold;}
+.home-star { font-size: 0.8rem; flex-shrink: 0; color: gold; }
 
-/* Actions row — icons in a horizontal strip, no overlap */
-.card-actions{
-  display:flex;align-items:center;gap:2px;flex-shrink:0;
+/* FIX 3: action icons — own dedicated row section, never overlap anything */
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  flex-shrink: 0;
 }
-.icon-btn{
-  background:none;border:none;color:var(--muted);
-  cursor:pointer;padding:3px 4px;border-radius:4px;
-  font-size:.82rem;line-height:1;
-  transition:color .15s,background .15s;
+.icon-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 3px 4px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  line-height: 1;
+  transition: color 0.15s, background 0.15s;
 }
-.icon-btn:hover{color:var(--text);background:var(--icon-hover);}
+.icon-btn:hover { color: var(--text); background: var(--icon-hover); }
 
-/* ── CARD ROW 2: meta strip (day/night icon + UTC offset + temp) ── */
-.card-meta{
-  display:flex;align-items:center;gap:8px;
-  font-size:.72rem;color:var(--muted);
-  margin-bottom:8px;flex-wrap:wrap;
+/* ── ROW 2: meta strip — ☀️/🌙 · UTC offset · temp ──
+   FIX 3: day/night icon lives HERE in flow, not absolutely positioned */
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  color: var(--muted);
+  margin-bottom: 5px;
+  flex-wrap: wrap;
 }
-.meta-icon{font-size:.9rem;line-height:1;}
-.meta-sep{opacity:.35;}
-.temp-display{font-weight:600;}
-.temp-loading{opacity:.45;}
+.meta-sep { opacity: 0.3; }
+.temp-val { font-weight: 600; }
 
-/* ── CARD ROW 3: nickname ── */
-.nickname-row{min-height:18px;margin-bottom:6px;}
-.nickname-display{
-  font-size:.73rem;color:var(--muted);cursor:pointer;
-  display:inline-flex;align-items:center;gap:3px;
+/* ── ROW 3: nickname ── */
+.nickname-row { min-height: 18px; margin-bottom: 5px; }
+.nickname-display {
+  font-size: 0.72rem;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 }
-.nickname-display:hover{color:var(--text);}
-.nickname-editor{display:none;}
-.nickname-editor.open{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
-.nickname-editor input{
-  background:var(--input-bg);border:1px solid var(--border);
-  color:inherit;border-radius:4px;padding:2px 6px;
-  font-size:.73rem;font-family:inherit;width:120px;outline:none;
+.nickname-display:hover { color: var(--text); }
+.nickname-editor { display: none; }
+.nickname-editor.open { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.nickname-editor input {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.72rem;
+  font-family: inherit;
+  width: 120px;
+  outline: none;
 }
-.nickname-editor input:focus{border-color:var(--accent);}
-.nick-char-count{font-size:.65rem;color:var(--muted);}
-.nick-save,.nick-cancel{
-  background:none;border:1px solid var(--border);
-  color:inherit;border-radius:4px;padding:2px 6px;
-  font-size:.7rem;cursor:pointer;font-family:inherit;
+.nickname-editor input:focus { border-color: var(--accent); }
+.nick-char-count { font-size: 0.65rem; color: var(--muted); }
+.nick-save, .nick-cancel {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  font-family: inherit;
 }
-.nick-save{border-color:var(--home-bdr);color:var(--home-bdr);}
+.nick-save { border-color: var(--home-bdr); color: var(--home-bdr); }
 
-/* ── CARD ROW 4: big time ── */
-.time-display{
-  font-size:clamp(1.7rem,3.5vw,2.2rem);
-  font-weight:300;letter-spacing:.03em;line-height:1;
-  font-variant-numeric:tabular-nums;
-  margin-bottom:4px;
+/* ── ROW 4: big time ── */
+.time-display {
+  font-size: clamp(1.6rem, 3.5vw, 2.1rem);
+  font-weight: 300;
+  letter-spacing: 0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 3px;
+  color: var(--text);
 }
-.ampm{font-size:.8rem;color:var(--muted);margin-left:3px;vertical-align:middle;}
+.ampm { font-size: 0.78rem; color: var(--muted); margin-left: 3px; vertical-align: middle; }
 
-/* ── CARD ROW 5: date ── */
-.date-display{font-size:.73rem;color:var(--muted);}
+/* ── ROW 5: date ── */
+.date-display { font-size: 0.72rem; color: var(--muted); }
 
 /* ── FLOATING MENU ── */
-.float-menu{position:fixed;inset:0;z-index:100;display:none;}
-.float-menu.open{display:block;}
-.float-menu-backdrop{position:absolute;inset:0;}
-.float-menu-panel{
-  position:absolute;top:64px;right:16px;
-  background:var(--bg2);border:1px solid var(--border);
-  border-radius:var(--radius);box-shadow:var(--shadow);
-  width:280px;padding:16px;z-index:101;
-  max-height:85vh;overflow-y:auto;
+.float-menu { position: fixed; inset: 0; z-index: 100; display: none; }
+.float-menu.open { display: block; }
+.float-menu-backdrop { position: absolute; inset: 0; }
+.float-menu-panel {
+  position: absolute;
+  top: 64px; right: 16px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  width: 280px;
+  padding: 16px;
+  z-index: 101;
+  max-height: 85vh;
+  overflow-y: auto;
 }
-.menu-section{margin-bottom:16px;}
-.menu-section:last-child{margin-bottom:0;}
-.menu-section-title{
-  font-size:.68rem;text-transform:uppercase;
-  letter-spacing:.08em;color:var(--muted);
-  font-weight:700;margin-bottom:7px;
+.menu-section { margin-bottom: 16px; }
+.menu-section:last-child { margin-bottom: 0; }
+.menu-section-title {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-weight: 700;
+  margin-bottom: 7px;
 }
-.theme-btn{
-  width:100%;background:var(--input-bg);
-  border:1px solid var(--border);color:var(--text);
-  border-radius:7px;padding:7px 11px;cursor:pointer;
-  font-family:inherit;font-size:.82rem;text-align:left;
-  transition:filter .15s;
+.theme-btn {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 7px;
+  padding: 7px 11px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.82rem;
+  text-align: left;
+  transition: filter 0.15s;
 }
-.theme-btn:hover{filter:brightness(1.15);}
-.reset-btn{
-  width:100%;background:none;
-  border:1px solid rgba(233,69,96,.35);color:var(--accent);
-  border-radius:7px;padding:7px 11px;cursor:pointer;
-  font-family:inherit;font-size:.82rem;margin-top:5px;
-  transition:background .15s;
+.theme-btn:hover { filter: brightness(1.15); }
+.reset-btn {
+  width: 100%;
+  background: none;
+  border: 1px solid rgba(233,69,96,0.35);
+  color: var(--accent);
+  border-radius: 7px;
+  padding: 7px 11px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.82rem;
+  margin-top: 5px;
+  transition: background 0.15s;
 }
-.reset-btn:hover{background:rgba(233,69,96,.08);}
+.reset-btn:hover { background: rgba(233,69,96,0.08); }
 
 /* ── CARD COLOUR MODAL ── */
-.colour-modal{
-  position:fixed;inset:0;z-index:200;
-  display:none;align-items:center;justify-content:center;
-  background:rgba(0,0,0,.55);backdrop-filter:blur(4px);
+.colour-modal {
+  position: fixed; inset: 0; z-index: 200;
+  display: none; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);
 }
-.colour-modal.open{display:flex;}
-.colour-panel{
-  background:var(--bg2);border:1px solid var(--border);
-  border-radius:var(--radius);padding:20px;width:300px;
-  box-shadow:var(--shadow);
+.colour-modal.open { display: flex; }
+.colour-panel {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px; width: 300px;
+  box-shadow: var(--shadow);
 }
-.colour-panel h3{
-  font-family:'Times New Roman',serif;font-size:.92rem;
-  color:var(--text);margin-bottom:12px;
+.colour-panel h3 {
+  font-family: 'Times New Roman', serif;
+  font-size: 0.92rem; color: var(--text); margin-bottom: 12px;
 }
-.colour-tabs{display:flex;gap:6px;margin-bottom:12px;}
-.colour-tab{
-  flex:1;background:none;border:1px solid var(--border);
-  color:var(--muted);border-radius:6px;padding:5px;
-  cursor:pointer;font-family:inherit;font-size:.8rem;
-  transition:all .15s;
+.colour-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+.colour-tab {
+  flex: 1; background: none;
+  border: 1px solid var(--border); color: var(--muted);
+  border-radius: 6px; padding: 5px;
+  cursor: pointer; font-family: inherit; font-size: 0.8rem;
+  transition: all 0.15s;
 }
-.colour-tab.active{border-color:var(--accent);color:var(--accent);}
-.colour-row{
-  display:flex;align-items:center;gap:8px;
-  margin-bottom:9px;font-size:.8rem;color:var(--muted);
+.colour-tab.active { border-color: var(--accent); color: var(--accent); }
+.colour-row {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 9px; font-size: 0.8rem; color: var(--muted);
 }
-.colour-row input[type=color]{
-  width:34px;height:26px;border:none;
-  border-radius:4px;cursor:pointer;background:none;
+.colour-row input[type=color] {
+  width: 34px; height: 26px; border: none; border-radius: 4px; cursor: pointer; background: none;
 }
-.direction-btns{display:flex;gap:3px;flex-wrap:wrap;}
-.dir-btn{
-  background:var(--input-bg);border:1px solid var(--border);
-  color:var(--text);border-radius:4px;padding:3px 8px;
-  cursor:pointer;font-size:.82rem;transition:all .15s;
+.direction-btns { display: flex; gap: 3px; flex-wrap: wrap; }
+.dir-btn {
+  background: var(--input-bg); border: 1px solid var(--border);
+  color: var(--text); border-radius: 4px; padding: 3px 8px;
+  cursor: pointer; font-size: 0.82rem; transition: all 0.15s;
 }
-.dir-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
-.colour-preview{
-  width:100%;height:32px;border-radius:6px;
-  margin:8px 0;border:1px solid var(--border);
+.dir-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.colour-preview {
+  width: 100%; height: 32px; border-radius: 6px;
+  margin: 8px 0; border: 1px solid var(--border);
 }
-.modal-actions{display:flex;gap:7px;justify-content:flex-end;margin-top:12px;}
-.btn-cancel,.btn-apply{
-  border:1px solid var(--border);background:none;
-  color:var(--text);border-radius:6px;padding:5px 14px;
-  cursor:pointer;font-family:inherit;font-size:.82rem;
+.modal-actions { display: flex; gap: 7px; justify-content: flex-end; margin-top: 12px; }
+.btn-cancel, .btn-apply {
+  border: 1px solid var(--border); background: none;
+  color: var(--text); border-radius: 6px; padding: 5px 14px;
+  cursor: pointer; font-family: inherit; font-size: 0.82rem;
 }
-.btn-apply{background:var(--accent);border-color:var(--accent);color:#fff;}
+.btn-apply { background: var(--accent); border-color: var(--accent); color: #fff; }
 
 /* ── CUSTOM BG MODAL ── */
-.bg-modal{
-  position:fixed;inset:0;z-index:200;
-  display:none;align-items:center;justify-content:center;
-  background:rgba(0,0,0,.55);backdrop-filter:blur(4px);
+.bg-modal {
+  position: fixed; inset: 0; z-index: 200;
+  display: none; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);
 }
-.bg-modal.open{display:flex;}
-.bg-panel{
-  background:var(--bg2);border:1px solid var(--border);
-  border-radius:var(--radius);padding:22px;width:330px;
-  box-shadow:var(--shadow);
+.bg-modal.open { display: flex; }
+.bg-panel {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 22px; width: 330px;
+  box-shadow: var(--shadow);
 }
-.bg-panel h3{
-  font-family:'Times New Roman',serif;font-size:1.05rem;
-  color:var(--text);margin-bottom:4px;
+.bg-panel h3 {
+  font-family: 'Times New Roman', serif; font-size: 1.05rem;
+  color: var(--text); margin-bottom: 4px;
 }
-.bg-panel>p{font-size:.77rem;color:var(--muted);line-height:1.45;margin-bottom:14px;}
-.bg-presets{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;}
-.bg-preset{
-  width:32px;height:32px;border-radius:7px;
-  border:2px solid transparent;cursor:pointer;flex-shrink:0;
-  transition:border-color .15s,transform .15s;position:relative;
+.bg-panel > p { font-size: 0.77rem; color: var(--muted); line-height: 1.45; margin-bottom: 14px; }
+.bg-presets { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 14px; }
+.bg-preset {
+  width: 32px; height: 32px; border-radius: 7px;
+  border: 2px solid transparent; cursor: pointer; flex-shrink: 0;
+  transition: border-color 0.15s, transform 0.15s; position: relative;
 }
-.bg-preset:hover,.bg-preset.selected{border-color:var(--accent);transform:scale(1.12);}
-.bg-preset.selected::after{
-  content:'✓';position:absolute;inset:0;
-  display:flex;align-items:center;justify-content:center;
-  font-size:.7rem;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6);
+.bg-preset:hover, .bg-preset.selected { border-color: var(--accent); transform: scale(1.12); }
+.bg-preset.selected::after {
+  content: '✓'; position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.6);
 }
-.bg-custom-row{display:flex;align-items:center;gap:9px;margin-bottom:12px;}
-.bg-custom-row label{font-size:.8rem;color:var(--muted);flex:1;}
-.bg-custom-row input[type=color]{
-  width:42px;height:32px;border:none;border-radius:5px;
-  cursor:pointer;background:none;
+.bg-custom-row { display: flex; align-items: center; gap: 9px; margin-bottom: 12px; }
+.bg-custom-row label { font-size: 0.8rem; color: var(--muted); flex: 1; }
+.bg-custom-row input[type=color] {
+  width: 42px; height: 32px; border: none; border-radius: 5px; cursor: pointer; background: none;
 }
-.bg-live-preview{
-  width:100%;height:46px;border-radius:9px;
-  border:1px solid var(--border);margin-bottom:12px;
-  transition:background .2s;display:flex;align-items:center;
-  justify-content:center;font-size:.68rem;
-  letter-spacing:.1em;color:rgba(255,255,255,.4);text-transform:uppercase;
+.bg-live-preview {
+  width: 100%; height: 46px; border-radius: 9px;
+  border: 1px solid var(--border); margin-bottom: 12px;
+  transition: background 0.2s;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.68rem; letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.4); text-transform: uppercase;
 }
 
 /* ── TIMEZONE LIST ── */
-.tz-list{
-  max-height:150px;overflow-y:auto;
-  display:flex;flex-direction:column;gap:3px;
-  margin-top:7px;padding-right:3px;
+.tz-list {
+  max-height: 150px; overflow-y: auto;
+  display: flex; flex-direction: column;
+  gap: 3px; margin-top: 7px; padding-right: 3px;
 }
-.tz-list::-webkit-scrollbar{width:3px;}
-.tz-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
-.tz-item{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:5px 7px;border-radius:5px;background:var(--input-bg);
-  font-size:.78rem;cursor:pointer;transition:filter .15s;
+.tz-list::-webkit-scrollbar { width: 3px; }
+.tz-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.tz-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 7px; border-radius: 5px;
+  background: var(--input-bg); font-size: 0.78rem;
+  cursor: pointer; transition: filter 0.15s;
 }
-.tz-item:hover{filter:brightness(1.15);}
-.tz-item .add-mark{font-size:.95rem;color:var(--home-bdr);}
-.tz-name-input{
-  background:var(--input-bg);border:1px solid var(--border);
-  color:var(--text);border-radius:5px;padding:4px 8px;
-  font-size:.78rem;width:100%;margin-bottom:5px;
-  font-family:inherit;outline:none;
+.tz-item:hover { filter: brightness(1.15); }
+.tz-item .add-mark { font-size: 0.95rem; color: var(--home-bdr); }
+.tz-name-input {
+  background: var(--input-bg); border: 1px solid var(--border);
+  color: var(--text); border-radius: 5px; padding: 4px 8px;
+  font-size: 0.78rem; width: 100%; margin-bottom: 5px;
+  font-family: inherit; outline: none;
 }
-.tz-name-input:focus{border-color:var(--accent);}
+.tz-name-input:focus { border-color: var(--accent); }
 
 /* ── TOAST ── */
-.toast{
-  position:fixed;bottom:24px;left:50%;
-  transform:translateX(-50%) translateY(60px);
-  background:#2a9d8f;color:#fff;
-  padding:8px 18px;border-radius:28px;
-  font-size:.82rem;font-weight:600;opacity:0;
-  pointer-events:none;z-index:999;
-  transition:transform .3s,opacity .3s;white-space:nowrap;
+.toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(60px);
+  background: #2a9d8f; color: #fff;
+  padding: 8px 18px; border-radius: 28px;
+  font-size: 0.82rem; font-weight: 600;
+  opacity: 0; pointer-events: none; z-index: 999;
+  transition: transform 0.3s, opacity 0.3s; white-space: nowrap;
 }
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* ── RESPONSIVE ── */
-@media(max-width:640px){
+@media (max-width: 600px) {
+  /* On mobile, 3-col and 4-col collapse to 2 */
   #clocks.layout-grid-3,
-  #clocks.layout-grid-4{grid-template-columns:repeat(2,1fr);}
-  #clocks.layout-grid-2{grid-template-columns:1fr;}
-  .toolbar{gap:5px;}
-  .app-title{font-size:1.6rem;}
-  .theme-switcher button span{display:none;}
+  #clocks.layout-grid-4 { grid-template-columns: repeat(2, 1fr); }
+  /* vertical vs horizontal ARE visually different:
+     horizontal = auto-fit (can be 2 cols on mobile)
+     vertical   = single column, max-width 320px centered */
+  #clocks.layout-horizontal { grid-template-columns: repeat(2, 1fr); }
+  #clocks.layout-vertical   { grid-template-columns: 1fr; }
+  .toolbar { gap: 5px; }
+  .app-title { font-size: 1.6rem; }
+  .pill-group button span { display: none; }
 }
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
+<!-- ── HEADER ── -->
 <header class="app-header">
   <h1 class="app-title">🌐 World <span>Clock</span></h1>
-  <p class="app-subtitle">Track live times across your key cities — personalise cards, set colours, and install as an app.</p>
+  <!-- FIX 4: subtitle is about the clock, not app features -->
+  <p class="app-subtitle">Your personal world clock — live times across every timezone, on every device.</p>
 </header>
 
-<!-- TOOLBAR -->
+<!-- ── TOOLBAR ── -->
 <div class="toolbar">
 
   <span class="toolbar-label">Format</span>
@@ -469,12 +581,12 @@ html,body{
   <button class="menu-btn" onclick="toggleMenu()">⋯ Menu</button>
 </div>
 
-<!-- CLOCKS -->
+<!-- ── CLOCKS ── -->
 <div id="clocks-wrapper">
   <div id="clocks" class="layout-horizontal"></div>
 </div>
 
-<!-- FLOATING MENU -->
+<!-- ── FLOATING MENU ── -->
 <div class="float-menu" id="floatMenu">
   <div class="float-menu-backdrop" onclick="closeMenu()"></div>
   <div class="float-menu-panel">
@@ -484,14 +596,14 @@ html,body{
     </div>
     <div class="menu-section">
       <div class="menu-section-title">Timezones</div>
-      <input class="tz-name-input" id="tzCustomName" placeholder="Custom display name (optional)" maxlength="24"/>
+      <input class="tz-name-input" id="tzCustomName" placeholder="Custom display name (optional)" maxlength="24" />
       <div class="tz-list" id="tzList"></div>
       <button class="reset-btn" onclick="resetAll()">↺ Reset all to default</button>
     </div>
   </div>
 </div>
 
-<!-- CARD COLOUR MODAL -->
+<!-- ── CARD COLOUR MODAL ── -->
 <div class="colour-modal" id="colourModal">
   <div class="colour-panel">
     <h3>Card colour</h3>
@@ -502,13 +614,13 @@ html,body{
     <div id="solidSection">
       <div class="colour-row">
         <label>Pick a colour</label>
-        <input type="color" id="solidColour" value="#0f3460" oninput="updatePreview()"/>
+        <input type="color" id="solidColour" value="#0f3460" oninput="updatePreview()" />
       </div>
     </div>
     <div id="gradientSection" style="display:none">
       <div class="colour-row">
-        <label>From</label><input type="color" id="gradFrom" value="#0f3460" oninput="updatePreview()"/>
-        <label>To</label>  <input type="color" id="gradTo"   value="#e94560" oninput="updatePreview()"/>
+        <label>From</label><input type="color" id="gradFrom" value="#0f3460" oninput="updatePreview()" />
+        <label>To</label>  <input type="color" id="gradTo"   value="#e94560" oninput="updatePreview()" />
       </div>
       <div class="colour-row" style="flex-direction:column;align-items:flex-start;gap:5px">
         <label>Direction</label>
@@ -528,7 +640,7 @@ html,body{
   </div>
 </div>
 
-<!-- CUSTOM BG MODAL -->
+<!-- ── CUSTOM BG MODAL ── -->
 <div class="bg-modal" id="bgModal">
   <div class="bg-panel">
     <h3>🎨 Custom Background</h3>
@@ -536,7 +648,7 @@ html,body{
     <div class="bg-presets" id="bgPresets"></div>
     <div class="bg-custom-row">
       <label>Pick any colour</label>
-      <input type="color" id="bgCustomColour" value="#1a1a2e" oninput="bgPickerChange()"/>
+      <input type="color" id="bgCustomColour" value="#1a1a2e" oninput="bgPickerChange()" />
     </div>
     <div class="bg-live-preview" id="bgLivePreview">Preview</div>
     <div class="modal-actions">
@@ -546,20 +658,18 @@ html,body{
   </div>
 </div>
 
-<!-- TOAST -->
+<!-- ── TOAST ── -->
 <div class="toast" id="toast">✓ Saved</div>
 
 <script>
-// ══════════════════════════════════════════════════════════
-//  DATA
-// ══════════════════════════════════════════════════════════
+// ═══════════ DATA ═══════════
 
 const DEFAULT_ZONES = [
-  {city:'Bangalore', tz:'Asia/Kolkata',      badge:'IST', lat:12.97, lon:77.59,  home:true },
-  {city:'Dubai',     tz:'Asia/Dubai',        badge:'GST', lat:25.20, lon:55.27,  home:false},
-  {city:'UTC',       tz:'UTC',              badge:'UTC', lat:51.48, lon:0.0,    home:false},
-  {city:'São Paulo', tz:'America/Sao_Paulo', badge:'BRT', lat:-23.55,lon:-46.63, home:false},
-  {city:'Chicago',   tz:'America/Chicago',   badge:'CDT', lat:41.88, lon:-87.63, home:false},
+  {city:'Bangalore', tz:'Asia/Kolkata',      badge:'IST', lat:12.97,  lon:77.59,  home:true },
+  {city:'Dubai',     tz:'Asia/Dubai',        badge:'GST', lat:25.20,  lon:55.27,  home:false},
+  {city:'UTC',       tz:'UTC',               badge:'UTC', lat:51.48,  lon:0.0,    home:false},
+  {city:'São Paulo', tz:'America/Sao_Paulo', badge:'BRT', lat:-23.55, lon:-46.63, home:false},
+  {city:'Chicago',   tz:'America/Chicago',   badge:'CDT', lat:41.88,  lon:-87.63, home:false},
 ];
 
 const ALL_ZONES = [
@@ -595,7 +705,7 @@ const ALL_ZONES = [
   {city:'UTC',         tz:'UTC',                 badge:'UTC', lat:51.48, lon:0.0},
 ];
 
-const BG_PRESETS=[
+const BG_PRESETS = [
   {hex:'#1a1a2e',label:'Midnight'},{hex:'#0d1b2a',label:'Abyss'},
   {hex:'#1b2838',label:'Steam'},   {hex:'#0a0a0a',label:'Pitch'},
   {hex:'#1c1c1e',label:'Carbon'},  {hex:'#1e3a2f',label:'Forest'},
@@ -604,499 +714,468 @@ const BG_PRESETS=[
   {hex:'#3a2020',label:'Crimson'}, {hex:'#1e2d1e',label:'Moss'},
 ];
 
-// ══════════════════════════════════════════════════════════
-//  STATE
-// ══════════════════════════════════════════════════════════
+// ═══════════ STATE ═══════════
 
-let state={
-  layout:'horizontal',format:24,
-  theme:'dark',customBg:'#1a1a2e',
-  zones:DEFAULT_ZONES.map(z=>({...z,visible:true,colour:null,nickname:''})),
+let state = {
+  layout: 'horizontal',
+  format: 24,
+  theme: 'dark',
+  customBg: '#1a1a2e',
+  zones: DEFAULT_ZONES.map(z => ({...z, visible:true, colour:null, nickname:''})),
 };
 
-// Temperature cache: key = "lat,lon", value = { temp, unit, ts }
-const tempCache={};
+const tempCache = {}; // key "lat,lon" → { temp, ts }
 
-// ══════════════════════════════════════════════════════════
-//  PERSIST
-// ══════════════════════════════════════════════════════════
+// ═══════════ PERSIST ═══════════
 
-function save(){
-  try{localStorage.setItem('wc4',JSON.stringify(state));}catch(e){}
+function save() {
+  try { localStorage.setItem('wc5', JSON.stringify(state)); } catch(e) {}
   showToast();
 }
-
-function load(){
-  try{
-    const r=localStorage.getItem('wc4');
-    if(r){const p=JSON.parse(r);state={...state,...p};}
-  }catch(e){}
+function load() {
+  try {
+    const r = localStorage.getItem('wc5');
+    if (r) { const p = JSON.parse(r); state = {...state, ...p}; }
+  } catch(e) {}
 }
 
-// ══════════════════════════════════════════════════════════
-//  TOAST
-// ══════════════════════════════════════════════════════════
+// ═══════════ TOAST ═══════════
 
 let _tt;
-function showToast(){
-  const t=document.getElementById('toast');
-  t.classList.add('show');clearTimeout(_tt);
-  _tt=setTimeout(()=>t.classList.remove('show'),1800);
+function showToast() {
+  const t = document.getElementById('toast');
+  t.classList.add('show'); clearTimeout(_tt);
+  _tt = setTimeout(() => t.classList.remove('show'), 1800);
 }
 
-// ══════════════════════════════════════════════════════════
-//  LAYOUT  — key fix: no max-width on grid modes
-// ══════════════════════════════════════════════════════════
+// ═══════════ LAYOUT ═══════════
+// FIX 1: max-width only applied on vertical; grid modes use full width
 
-function setLayout(m){state.layout=m;applyLayout();save();}
+function setLayout(m) { state.layout = m; applyLayout(); save(); }
 
-function applyLayout(){
-  const c=document.getElementById('clocks');
-  // remove all layout classes first
-  c.className='';
-  c.classList.add('layout-'+state.layout);
-
-  // vertical needs a max-width; grid modes must NOT have one
-  if(state.layout==='vertical'){
-    c.style.maxWidth='400px';
-    c.style.margin='0 auto';
+function applyLayout() {
+  const c = document.getElementById('clocks');
+  c.className = 'layout-' + state.layout;
+  // Only vertical gets a max-width constraint; everything else fills the page
+  if (state.layout === 'vertical') {
+    c.style.maxWidth = '400px';
+    c.style.margin   = '0 auto';
   } else {
-    c.style.maxWidth='';
-    c.style.margin='';
+    c.style.maxWidth = '';
+    c.style.margin   = '';
   }
-
-  const map={h:'horizontal',v:'vertical','2':'grid-2','3':'grid-3','4':'grid-4'};
-  Object.entries(map).forEach(([k,v])=>
-    document.getElementById('gbtn-'+k)?.classList.toggle('active',state.layout===v));
+  const map = {h:'horizontal', v:'vertical', '2':'grid-2', '3':'grid-3', '4':'grid-4'};
+  Object.entries(map).forEach(([k,v]) =>
+    document.getElementById('gbtn-'+k)?.classList.toggle('active', state.layout === v)
+  );
 }
 
-// ══════════════════════════════════════════════════════════
-//  FORMAT
-// ══════════════════════════════════════════════════════════
+// ═══════════ FORMAT ═══════════
 
-function setFormat(f){
-  state.format=f;
-  document.getElementById('btn-24h').classList.toggle('active',f===24);
-  document.getElementById('btn-12h').classList.toggle('active',f===12);
+function setFormat(f) {
+  state.format = f;
+  document.getElementById('btn-24h').classList.toggle('active', f === 24);
+  document.getElementById('btn-12h').classList.toggle('active', f === 12);
   save();
 }
 
-// ══════════════════════════════════════════════════════════
-//  THEME
-// ══════════════════════════════════════════════════════════
+// ═══════════ THEME ═══════════
 
-function setTheme(name){state.theme=name;applyTheme();save();}
+function setTheme(name) { state.theme = name; applyTheme(); save(); }
 
-function lightenHex(hex,amt){
-  const n=parseInt(hex.replace('#',''),16);
-  const r=Math.min(255,(n>>16)+amt);
-  const g=Math.min(255,((n>>8)&0xff)+amt);
-  const b=Math.min(255,(n&0xff)+amt);
-  return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+// FIX 2 helper: WCAG relative luminance
+function hexLuminance(hex) {
+  const n = parseInt(hex.replace('#',''), 16);
+  const r = (n>>16)/255, g = ((n>>8)&0xff)/255, b = (n&0xff)/255;
+  const lin = c => c <= 0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4);
+  return 0.2126*lin(r) + 0.7152*lin(g) + 0.0722*lin(b);
 }
 
-function applyTheme(){
-  const h=document.documentElement;
-  h.setAttribute('data-theme',state.theme);
-  if(state.theme==='custom'){
-    const bg=state.customBg;
-    h.style.setProperty('--bg',bg);
-    h.style.setProperty('--bg2',lightenHex(bg,9));
-    h.style.setProperty('--card',lightenHex(bg,18));
-    document.getElementById('metaThemeColor').content=bg;
-    // custom theme text tokens follow luminance of bg
-    const lum=hexLuminance(bg);
-    const tv=lum>0.35?'#111':'#eaeaea';
-    const mv=lum>0.35?'#555':'#9aa3b0';
-    h.style.setProperty('--text',tv);
-    h.style.setProperty('--muted',mv);
-    h.style.setProperty('--border',lum>0.35?'rgba(0,0,0,.10)':'rgba(255,255,255,.10)');
-    h.style.setProperty('--badge-bg',lum>0.35?'rgba(0,0,0,.08)':'rgba(255,255,255,.10)');
-    h.style.setProperty('--input-bg',lum>0.35?'rgba(0,0,0,.05)':'rgba(255,255,255,.08)');
-    h.style.setProperty('--icon-hover',lum>0.35?'rgba(0,0,0,.06)':'rgba(255,255,255,.08)');
+function lightenHex(hex, amt) {
+  const n = parseInt(hex.replace('#',''), 16);
+  const r = Math.min(255, (n>>16)+amt);
+  const g = Math.min(255, ((n>>8)&0xff)+amt);
+  const b = Math.min(255, (n&0xff)+amt);
+  return '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('');
+}
+
+function applyTheme() {
+  const h = document.documentElement;
+  h.setAttribute('data-theme', state.theme);
+
+  if (state.theme === 'custom') {
+    const bg = state.customBg;
+    const lum = hexLuminance(bg);
+    // FIX 2: custom theme text adapts to bg luminance
+    const textCol  = lum > 0.30 ? '#111111' : '#eaeaea';
+    const mutedCol = lum > 0.30 ? '#555555' : '#9aa3b0';
+    const borderVal = lum > 0.30 ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.10)';
+    const badgeVal  = lum > 0.30 ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.10)';
+    const inputVal  = lum > 0.30 ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)';
+    const hoverVal  = lum > 0.30 ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)';
+    h.style.setProperty('--bg',         bg);
+    h.style.setProperty('--bg2',        lightenHex(bg, 9));
+    h.style.setProperty('--card',       lightenHex(bg, 18));
+    h.style.setProperty('--text',       textCol);
+    h.style.setProperty('--muted',      mutedCol);
+    h.style.setProperty('--border',     borderVal);
+    h.style.setProperty('--badge-bg',   badgeVal);
+    h.style.setProperty('--input-bg',   inputVal);
+    h.style.setProperty('--icon-hover', hoverVal);
+    document.getElementById('metaThemeColor').content = bg;
   } else {
+    // Clear any custom inline props so CSS theme tokens take over cleanly
     ['--bg','--bg2','--card','--text','--muted','--border','--badge-bg','--input-bg','--icon-hover']
-      .forEach(p=>h.style.removeProperty(p));
-    document.getElementById('metaThemeColor').content=state.theme==='light'?'#f0f4f8':'#1a1a2e';
+      .forEach(p => h.style.removeProperty(p));
+    document.getElementById('metaThemeColor').content =
+      state.theme === 'light' ? '#f0f4f8' : '#1a1a2e';
   }
-  document.getElementById('tbtn-dark').classList.toggle('active',  state.theme==='dark');
-  document.getElementById('tbtn-light').classList.toggle('active', state.theme==='light');
-  document.getElementById('tbtn-custom').classList.toggle('active',state.theme==='custom');
+
+  document.getElementById('tbtn-dark').classList.toggle('active',   state.theme === 'dark');
+  document.getElementById('tbtn-light').classList.toggle('active',  state.theme === 'light');
+  document.getElementById('tbtn-custom').classList.toggle('active', state.theme === 'custom');
 }
 
-// ══════════════════════════════════════════════════════════
-//  CONTRAST HELPER  — decides if card text should be dark or light
-//  Works on any background: solid colour or gradient (uses first stop)
-// ══════════════════════════════════════════════════════════
+// ═══════════ CARD CONTRAST (FIX 2) ═══════════
+// Given a card's custom colour, returns 'dark' (need dark text) or 'light' (need light text)
+// Returns null when no custom colour — card inherits theme text colour naturally
 
-function hexLuminance(hex){
-  // relative luminance per WCAG
-  const n=parseInt(hex.replace('#',''),16);
-  const r=(n>>16)/255, g=((n>>8)&0xff)/255, b=(n&0xff)/255;
-  const linear=c=>c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4);
-  return .2126*linear(r)+.7152*linear(g)+.0722*linear(b);
+function cardContrastAttr(colour) {
+  if (!colour) return null;
+  const hex = colour.type === 'solid' ? colour.value : colour.from;
+  if (!hex) return null;
+  return hexLuminance(hex) > 0.22 ? 'dark' : 'light';
 }
 
-function contrastAttr(colour){
-  if(!colour) return null; // no custom colour — inherit from theme
-  let hex=null;
-  if(colour.type==='solid') hex=colour.value;
-  else hex=colour.from; // use first gradient colour for luminance
-  if(!hex) return null;
-  return hexLuminance(hex)>0.22?'dark':'light';
+// ═══════════ TEMPERATURE (FIX 5) ═══════════
+
+async function fetchTemp(lat, lon) {
+  const key = `${lat},${lon}`;
+  const cached = tempCache[key];
+  if (cached && Date.now() - cached.ts < 600000) return cached.temp;
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&temperature_unit=celsius`;
+    const data = await (await fetch(url)).json();
+    const temp = Math.round(data.current_weather.temperature);
+    tempCache[key] = {temp, ts: Date.now()};
+    return temp;
+  } catch { return null; }
 }
 
-// ══════════════════════════════════════════════════════════
-//  TEMPERATURE  (Open-Meteo — free, no key)
-// ══════════════════════════════════════════════════════════
-
-async function fetchTemp(lat,lon){
-  const key=`${lat},${lon}`;
-  const cached=tempCache[key];
-  if(cached&&Date.now()-cached.ts<600000) return cached; // 10-min cache
-  try{
-    const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&temperature_unit=celsius`;
-    const res=await fetch(url);
-    const data=await res.json();
-    const temp=Math.round(data.current_weather.temperature);
-    const entry={temp,unit:'°C',ts:Date.now()};
-    tempCache[key]=entry;
-    return entry;
-  }catch(e){
-    return null;
-  }
-}
-
-function updateTempEl(i,lat,lon){
-  const el=document.getElementById('temp-'+i);
-  if(!el) return;
-  fetchTemp(lat,lon).then(r=>{
-    if(!el) return;
-    if(r) el.textContent=`${r.temp}${r.unit}`;
-    else   el.textContent='';
+function loadCardTemp(i, lat, lon) {
+  const el = document.getElementById('temp-' + i);
+  if (!el) return;
+  fetchTemp(lat, lon).then(t => {
+    const el2 = document.getElementById('temp-' + i);
+    if (el2) el2.textContent = t != null ? t + '°C' : '';
   });
 }
 
-// ══════════════════════════════════════════════════════════
-//  TIME HELPERS
-// ══════════════════════════════════════════════════════════
+// ═══════════ TIME HELPERS ═══════════
 
-function isDaytime(tz){
-  const h=parseInt(new Intl.DateTimeFormat('en-GB',{timeZone:tz,hour:'2-digit',hour12:false}).format(new Date()));
-  return h>=6&&h<20;
+function isDaytime(tz) {
+  const h = parseInt(new Intl.DateTimeFormat('en-GB',{timeZone:tz,hour:'2-digit',hour12:false}).format(new Date()));
+  return h >= 6 && h < 20;
+}
+function getUTCOffset(tz) {
+  const s = new Intl.DateTimeFormat('en-US',{timeZone:tz,timeZoneName:'shortOffset'}).format(new Date());
+  const m = s.match(/GMT([+-]\d+(?::\d+)?)/i);
+  return m ? 'UTC'+m[1] : 'UTC+0';
 }
 
-function getUTCOffset(tz){
-  const s=new Intl.DateTimeFormat('en-US',{timeZone:tz,timeZoneName:'shortOffset'}).format(new Date());
-  const m=s.match(/GMT([+-]\d+(?::\d+)?)/i);
-  return m?'UTC'+m[1]:'UTC+0';
-}
+// ═══════════ RENDER ═══════════
 
-// ══════════════════════════════════════════════════════════
-//  RENDER
-// ══════════════════════════════════════════════════════════
-
-function renderCards(){
-  const C=document.getElementById('clocks');
-  C.innerHTML='';
-  state.zones.forEach((z,i)=>C.appendChild(buildCard(z,i)));
+function renderCards() {
+  const C = document.getElementById('clocks');
+  C.innerHTML = '';
+  state.zones.forEach((z, i) => C.appendChild(buildCard(z, i)));
   applyLayout();
   setupDrag();
-  // fetch temps after render
-  state.zones.forEach((z,i)=>{
-    if(z.lat!=null&&z.lon!=null) updateTempEl(i,z.lat,z.lon);
+  // Kick off temp fetches after render
+  state.zones.forEach((z, i) => {
+    if (z.lat != null && z.lon != null) loadCardTemp(i, z.lat, z.lon);
   });
 }
 
-function buildCard(z,i){
-  const div=document.createElement('div');
-  div.className='clock-card'+(z.home?' home-card':'')+(!z.visible?' hidden-card':'');
-  div.dataset.idx=i;
+function buildCard(z, i) {
+  const div = document.createElement('div');
+  div.className = 'clock-card' + (z.home ? ' home-card' : '') + (!z.visible ? ' hidden-card' : '');
+  div.dataset.idx = i;
 
-  // Apply colour
-  if(z.colour){
-    div.style.background=z.colour.type==='solid'
-      ?z.colour.value
-      :`linear-gradient(${z.colour.dir},${z.colour.from},${z.colour.to})`;
-    const attr=contrastAttr(z.colour);
-    if(attr) div.setAttribute('data-contrast',attr);
+  // Apply card colour + auto contrast
+  if (z.colour) {
+    div.style.background = z.colour.type === 'solid'
+      ? z.colour.value
+      : `linear-gradient(${z.colour.dir}, ${z.colour.from}, ${z.colour.to})`;
+    const attr = cardContrastAttr(z.colour);
+    if (attr) div.setAttribute('data-contrast', attr);
   }
 
-  // ── ROW 1: city name + timezone badge + home star | action icons ──
-  const top=document.createElement('div');top.className='card-top';
+  // ── ROW 1: city name + badge + star | 🎨 👁 ✕ ──
+  const top = document.createElement('div');
+  top.className = 'card-top';
 
-  const cr=document.createElement('div');cr.className='city-row';
-  cr.innerHTML=`<span class="city-name">${z.city}</span>
-                <span class="tz-badge">${z.badge}</span>
-                ${z.home?'<span class="home-star">★</span>':''}`;
-  top.appendChild(cr);
+  const cityRow = document.createElement('div');
+  cityRow.className = 'city-row';
+  cityRow.innerHTML = `
+    <span class="city-name">${z.city}</span>
+    <span class="tz-badge">${z.badge}</span>
+    ${z.home ? '<span class="home-star">★</span>' : ''}
+  `;
+  top.appendChild(cityRow);
 
-  // action buttons — palette | eye | remove (no absolute positioning)
-  const acts=document.createElement('div');acts.className='card-actions';
+  const acts = document.createElement('div');
+  acts.className = 'card-actions';
 
-  const pal=document.createElement('button');
-  pal.className='icon-btn';pal.title='Card colour';pal.textContent='🎨';
-  pal.onclick=()=>openColour(i);acts.appendChild(pal);
+  const palBtn = document.createElement('button');
+  palBtn.className = 'icon-btn'; palBtn.title = 'Card colour'; palBtn.textContent = '🎨';
+  palBtn.onclick = () => openColour(i); acts.appendChild(palBtn);
 
-  const eye=document.createElement('button');
-  eye.className='icon-btn';eye.title=z.visible?'Hide':'Show';
-  eye.textContent=z.visible?'👁':'🙈';eye.onclick=()=>toggleVisible(i);
-  acts.appendChild(eye);
+  const eyeBtn = document.createElement('button');
+  eyeBtn.className = 'icon-btn'; eyeBtn.title = z.visible ? 'Hide' : 'Show';
+  eyeBtn.textContent = z.visible ? '👁' : '🙈';
+  eyeBtn.onclick = () => toggleVisible(i); acts.appendChild(eyeBtn);
 
-  if(!z.home){
-    const rm=document.createElement('button');
-    rm.className='icon-btn';rm.title='Remove';
-    rm.textContent='✕';rm.style.color='#e94560';
-    rm.onclick=()=>removeZone(i);acts.appendChild(rm);
+  if (!z.home) {
+    const rmBtn = document.createElement('button');
+    rmBtn.className = 'icon-btn'; rmBtn.title = 'Remove';
+    rmBtn.textContent = '✕'; rmBtn.style.color = '#e94560';
+    rmBtn.onclick = () => removeZone(i); acts.appendChild(rmBtn);
   }
 
   top.appendChild(acts);
   div.appendChild(top);
 
-  // ── ROW 2: meta strip — day/night icon + UTC offset + temperature ──
-  const meta=document.createElement('div');meta.className='card-meta';
-
-  const dayIconEl=document.createElement('span');
-  dayIconEl.className='meta-icon';dayIconEl.id='dayicon-'+i;
-  meta.appendChild(dayIconEl);
-
-  const sep1=document.createElement('span');sep1.className='meta-sep';sep1.textContent='·';
-  meta.appendChild(sep1);
-
-  const offsetEl=document.createElement('span');
-  offsetEl.className='utc-offset';offsetEl.id='offset-'+i;
-  offsetEl.textContent=getUTCOffset(z.tz);
-  meta.appendChild(offsetEl);
-
-  if(z.lat!=null&&z.lon!=null){
-    const sep2=document.createElement('span');sep2.className='meta-sep';sep2.textContent='·';
-    meta.appendChild(sep2);
-    const tempEl=document.createElement('span');
-    tempEl.className='temp-display temp-loading';
-    tempEl.id='temp-'+i;tempEl.textContent='…°C';
-    meta.appendChild(tempEl);
-  }
-
+  // ── ROW 2: meta strip — ☀️/🌙 · UTC offset · temp ──
+  // FIX 3: day/night icon is in this inline flex row, NOT absolutely positioned
+  const meta = document.createElement('div');
+  meta.className = 'card-meta';
+  meta.innerHTML = `
+    <span id="dayicon-${i}">${isDaytime(z.tz) ? '☀️' : '🌙'}</span>
+    <span class="meta-sep">·</span>
+    <span>${getUTCOffset(z.tz)}</span>
+    ${z.lat != null ? `<span class="meta-sep">·</span><span id="temp-${i}" class="temp-val">…°C</span>` : ''}
+  `;
   div.appendChild(meta);
 
   // ── ROW 3: nickname ──
-  const nr=document.createElement('div');nr.className='nickname-row';
-  const nd=document.createElement('div');nd.className='nickname-display';nd.id='nd-'+i;
-  nd.onclick=()=>openNickEditor(i);
-  nd.innerHTML=z.nickname?`✏️ <em>${z.nickname}</em>`:`<span style="opacity:.45">✏️ Add nickname</span>`;
+  const nickRow = document.createElement('div');
+  nickRow.className = 'nickname-row';
 
-  const ne=document.createElement('div');ne.className='nickname-editor';ne.id='ne-'+i;
-  const ni=document.createElement('input');
-  ni.maxLength=20;ni.value=z.nickname||'';ni.placeholder='Nickname…';
-  const nc_el=document.createElement('span');nc_el.className='nick-char-count';
-  nc_el.textContent=(z.nickname||'').length+'/20';
-  ni.oninput=()=>{const v=ni.value.replace(/[^a-zA-Z0-9\-_]/g,'');ni.value=v;nc_el.textContent=v.length+'/20';};
-  ni.onkeydown=e=>{if(e.key==='Enter')saveNick(i,ni.value);if(e.key==='Escape')closeNickEditor(i);};
-  const ns=document.createElement('button');ns.className='nick-save';ns.textContent='Save';
-  ns.onclick=()=>saveNick(i,ni.value);
-  const ncan=document.createElement('button');ncan.className='nick-cancel';ncan.textContent='Cancel';
-  ncan.onclick=()=>closeNickEditor(i);
-  ne.append(ni,nc_el,ns,ncan);nr.append(nd,ne);
-  div.appendChild(nr);
+  const nd = document.createElement('div');
+  nd.className = 'nickname-display'; nd.id = 'nd-'+i;
+  nd.onclick = () => openNickEditor(i);
+  nd.innerHTML = z.nickname
+    ? `✏️ <em>${z.nickname}</em>`
+    : `<span style="opacity:0.45">✏️ Add nickname</span>`;
 
-  // ── ROW 4: time ──
-  const te=document.createElement('div');te.className='time-display';te.id='time-'+i;
+  const ne = document.createElement('div');
+  ne.className = 'nickname-editor'; ne.id = 'ne-'+i;
+
+  const ni = document.createElement('input');
+  ni.maxLength = 20; ni.value = z.nickname || ''; ni.placeholder = 'Nickname…';
+  const nc_el = document.createElement('span');
+  nc_el.className = 'nick-char-count';
+  nc_el.textContent = (z.nickname||'').length + '/20';
+  ni.oninput = () => {
+    const v = ni.value.replace(/[^a-zA-Z0-9\-_]/g, '');
+    ni.value = v; nc_el.textContent = v.length + '/20';
+  };
+  ni.onkeydown = e => {
+    if (e.key === 'Enter')  saveNick(i, ni.value);
+    if (e.key === 'Escape') closeNickEditor(i);
+  };
+  const ns   = document.createElement('button'); ns.className = 'nick-save';   ns.textContent = 'Save';
+  const ncan = document.createElement('button'); ncan.className = 'nick-cancel'; ncan.textContent = 'Cancel';
+  ns.onclick   = () => saveNick(i, ni.value);
+  ncan.onclick = () => closeNickEditor(i);
+
+  ne.append(ni, nc_el, ns, ncan);
+  nickRow.append(nd, ne);
+  div.appendChild(nickRow);
+
+  // ── ROW 4: big time ──
+  const te = document.createElement('div'); te.className = 'time-display'; te.id = 'time-'+i;
   div.appendChild(te);
 
   // ── ROW 5: date ──
-  const de=document.createElement('div');de.className='date-display';de.id='date-'+i;
+  const de = document.createElement('div'); de.className = 'date-display'; de.id = 'date-'+i;
   div.appendChild(de);
 
   return div;
 }
 
-// ══════════════════════════════════════════════════════════
-//  TICK
-// ══════════════════════════════════════════════════════════
+// ═══════════ TICK ═══════════
 
-function tick(){
-  const now=new Date();
-  state.zones.forEach((z,i)=>{
-    const te=document.getElementById('time-'+i);
-    const de=document.getElementById('date-'+i);
-    const ie=document.getElementById('dayicon-'+i);
-    if(!te)return;
+function tick() {
+  const now = new Date();
+  state.zones.forEach((z, i) => {
+    const te = document.getElementById('time-'+i);
+    const de = document.getElementById('date-'+i);
+    const ie = document.getElementById('dayicon-'+i);
+    if (!te) return;
 
-    if(state.format===12){
-      const s=new Intl.DateTimeFormat('en-US',{timeZone:z.tz,hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true}).format(now);
-      const[t,ap]=s.split(' ');
-      te.innerHTML=`${t}<span class="ampm">${ap||''}</span>`;
-    }else{
-      te.textContent=new Intl.DateTimeFormat('en-GB',{timeZone:z.tz,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(now);
+    if (state.format === 12) {
+      const s = new Intl.DateTimeFormat('en-US',{timeZone:z.tz,hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true}).format(now);
+      const [t, ap] = s.split(' ');
+      te.innerHTML = `${t}<span class="ampm">${ap||''}</span>`;
+    } else {
+      te.textContent = new Intl.DateTimeFormat('en-GB',{timeZone:z.tz,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(now);
     }
-
-    de.textContent=new Intl.DateTimeFormat('en-GB',{timeZone:z.tz,weekday:'short',day:'numeric',month:'short'}).format(now);
-    if(ie) ie.textContent=isDaytime(z.tz)?'☀️':'🌙';
+    de.textContent = new Intl.DateTimeFormat('en-GB',{timeZone:z.tz,weekday:'short',day:'numeric',month:'short'}).format(now);
+    if (ie) ie.textContent = isDaytime(z.tz) ? '☀️' : '🌙';
   });
 }
 
-// Refresh temps every 10 minutes
-function refreshTemps(){
-  state.zones.forEach((z,i)=>{
-    if(z.lat!=null&&z.lon!=null) updateTempEl(i,z.lat,z.lon);
-  });
-}
+// ═══════════ CARD ACTIONS ═══════════
 
-// ══════════════════════════════════════════════════════════
-//  ACTIONS
-// ══════════════════════════════════════════════════════════
+function toggleVisible(i) { state.zones[i].visible = !state.zones[i].visible; save(); renderCards(); }
+function removeZone(i)     { state.zones.splice(i,1); save(); renderCards(); }
 
-function toggleVisible(i){state.zones[i].visible=!state.zones[i].visible;save();renderCards();}
-function removeZone(i)    {state.zones.splice(i,1);save();renderCards();}
+function openNickEditor(i)  { document.getElementById('nd-'+i).style.display = 'none'; document.getElementById('ne-'+i).classList.add('open'); }
+function closeNickEditor(i) { document.getElementById('nd-'+i).style.display = '';     document.getElementById('ne-'+i).classList.remove('open'); }
+function saveNick(i, val)   { state.zones[i].nickname = val.trim(); save(); renderCards(); }
 
-function openNickEditor(i) {document.getElementById('nd-'+i).style.display='none';document.getElementById('ne-'+i).classList.add('open');}
-function closeNickEditor(i){document.getElementById('nd-'+i).style.display='';   document.getElementById('ne-'+i).classList.remove('open');}
-function saveNick(i,val)   {state.zones[i].nickname=val.trim();save();renderCards();}
+// ═══════════ CARD COLOUR ═══════════
 
-// card colour
-let _ct=null,_ctab='solid',_gdir='to right';
+let _ct = null, _ctab = 'solid', _gdir = 'to right';
 
-function openColour(idx){
-  _ct=idx;setColourTab('solid');
-  const ex=state.zones[idx]?.colour;
-  if(ex?.type==='gradient'){
+function openColour(idx) {
+  _ct = idx; setColourTab('solid');
+  const ex = state.zones[idx]?.colour;
+  if (ex?.type === 'gradient') {
     setColourTab('gradient');
-    document.getElementById('gradFrom').value=ex.from;
-    document.getElementById('gradTo').value=ex.to;
-    _gdir=ex.dir;
-    document.querySelectorAll('.dir-btn').forEach(b=>b.classList.toggle('active',b.dataset.dir===_gdir));
-  }else if(ex?.type==='solid'){
-    document.getElementById('solidColour').value=ex.value;
+    document.getElementById('gradFrom').value = ex.from;
+    document.getElementById('gradTo').value   = ex.to;
+    _gdir = ex.dir;
+    document.querySelectorAll('.dir-btn').forEach(b => b.classList.toggle('active', b.dataset.dir === _gdir));
+  } else if (ex?.type === 'solid') {
+    document.getElementById('solidColour').value = ex.value;
   }
   updatePreview();
   document.getElementById('colourModal').classList.add('open');
 }
+function openThemeColour() { _ct = 'theme'; setColourTab('solid'); updatePreview(); document.getElementById('colourModal').classList.add('open'); }
+function closeColour() { document.getElementById('colourModal').classList.remove('open'); }
 
-function openThemeColour(){_ct='theme';setColourTab('solid');updatePreview();document.getElementById('colourModal').classList.add('open');}
-function closeColour(){document.getElementById('colourModal').classList.remove('open');}
-
-function setColourTab(tab){
-  _ctab=tab;
-  document.getElementById('tabSolid').classList.toggle('active',   tab==='solid');
-  document.getElementById('tabGradient').classList.toggle('active',tab==='gradient');
-  document.getElementById('solidSection').style.display   =tab==='solid'   ?'':'none';
-  document.getElementById('gradientSection').style.display=tab==='gradient'?'':'none';
+function setColourTab(tab) {
+  _ctab = tab;
+  document.getElementById('tabSolid').classList.toggle('active',    tab === 'solid');
+  document.getElementById('tabGradient').classList.toggle('active', tab === 'gradient');
+  document.getElementById('solidSection').style.display    = tab === 'solid'    ? '' : 'none';
+  document.getElementById('gradientSection').style.display = tab === 'gradient' ? '' : 'none';
   updatePreview();
 }
-
-function setDir(btn,dir){
-  _gdir=dir;
-  document.querySelectorAll('.dir-btn').forEach(b=>b.classList.toggle('active',b===btn));
+function setDir(btn, dir) {
+  _gdir = dir;
+  document.querySelectorAll('.dir-btn').forEach(b => b.classList.toggle('active', b === btn));
   updatePreview();
 }
-
-function updatePreview(){
-  document.getElementById('colourPreview').style.background=_ctab==='solid'
-    ?document.getElementById('solidColour').value
-    :`linear-gradient(${_gdir},${document.getElementById('gradFrom').value},${document.getElementById('gradTo').value})`;
+function updatePreview() {
+  document.getElementById('colourPreview').style.background = _ctab === 'solid'
+    ? document.getElementById('solidColour').value
+    : `linear-gradient(${_gdir}, ${document.getElementById('gradFrom').value}, ${document.getElementById('gradTo').value})`;
+}
+function applyColour() {
+  const colour = _ctab === 'solid'
+    ? {type:'solid', value: document.getElementById('solidColour').value}
+    : {type:'gradient', from: document.getElementById('gradFrom').value,
+       to: document.getElementById('gradTo').value, dir: _gdir};
+  if (_ct === 'theme') state.zones.forEach(z => z.colour = JSON.parse(JSON.stringify(colour)));
+  else state.zones[_ct].colour = colour;
+  closeColour(); save(); renderCards();
 }
 
-function applyColour(){
-  const colour=_ctab==='solid'
-    ?{type:'solid',value:document.getElementById('solidColour').value}
-    :{type:'gradient',from:document.getElementById('gradFrom').value,
-      to:document.getElementById('gradTo').value,dir:_gdir};
-  if(_ct==='theme') state.zones.forEach(z=>z.colour=JSON.parse(JSON.stringify(colour)));
-  else state.zones[_ct].colour=colour;
-  closeColour();save();renderCards();
-}
+// ═══════════ MENU / TIMEZONE ═══════════
 
-// menu / tz
-function toggleMenu(){
-  const m=document.getElementById('floatMenu');
+function toggleMenu() {
+  const m = document.getElementById('floatMenu');
   m.classList.toggle('open');
-  if(m.classList.contains('open'))buildTZList();
+  if (m.classList.contains('open')) buildTZList();
 }
-function closeMenu(){document.getElementById('floatMenu').classList.remove('open');}
+function closeMenu() { document.getElementById('floatMenu').classList.remove('open'); }
 
-function buildTZList(){
-  const list=document.getElementById('tzList');
-  list.innerHTML='';
-  const ex=new Set(state.zones.map(z=>z.tz));
-  ALL_ZONES.forEach(z=>{
-    const item=document.createElement('div');item.className='tz-item';
-    const already=ex.has(z.tz);
-    item.innerHTML=`<span>${z.city} <span style="color:var(--muted);font-size:.72rem">${z.badge}</span></span><span class="add-mark">${already?'✓':'+'}</span>`;
-    if(!already)item.onclick=()=>addZone(z);
+function buildTZList() {
+  const list = document.getElementById('tzList');
+  list.innerHTML = '';
+  const ex = new Set(state.zones.map(z => z.tz));
+  ALL_ZONES.forEach(z => {
+    const item = document.createElement('div'); item.className = 'tz-item';
+    const already = ex.has(z.tz);
+    item.innerHTML = `<span>${z.city} <span style="color:var(--muted);font-size:.72rem">${z.badge}</span></span><span class="add-mark">${already ? '✓' : '+'}</span>`;
+    if (!already) item.onclick = () => addZone(z);
     list.appendChild(item);
   });
 }
-
-function addZone(z){
-  if(state.zones.length>=10){alert('Max 10 timezones.');return;}
-  const n=document.getElementById('tzCustomName').value.trim();
-  state.zones.push({...z,home:false,visible:true,colour:null,nickname:n||''});
-  document.getElementById('tzCustomName').value='';
-  save();renderCards();buildTZList();
+function addZone(z) {
+  if (state.zones.length >= 10) { alert('Max 10 timezones.'); return; }
+  const n = document.getElementById('tzCustomName').value.trim();
+  state.zones.push({...z, home:false, visible:true, colour:null, nickname: n||''});
+  document.getElementById('tzCustomName').value = '';
+  save(); renderCards(); buildTZList();
+}
+function resetAll() {
+  if (!confirm('Reset all to default?')) return;
+  state.zones    = DEFAULT_ZONES.map(z => ({...z, visible:true, colour:null, nickname:''}));
+  state.layout   = 'horizontal';
+  state.format   = 24;
+  state.theme    = 'dark';
+  state.customBg = '#1a1a2e';
+  applyTheme(); applyLayout(); setFormat(24); save(); renderCards(); closeMenu();
 }
 
-function resetAll(){
-  if(!confirm('Reset all to default?'))return;
-  state.zones=DEFAULT_ZONES.map(z=>({...z,visible:true,colour:null,nickname:''}));
-  state.layout='horizontal';state.format=24;state.theme='dark';state.customBg='#1a1a2e';
-  applyTheme();applyLayout();setFormat(24);save();renderCards();closeMenu();
-}
+// ═══════════ DRAG & DROP ═══════════
 
-// drag & drop
-function setupDrag(){
-  let dragged=null;
-  document.querySelectorAll('.clock-card').forEach(card=>{
-    card.draggable=true;
-    card.addEventListener('dragstart',()=>{dragged=card;setTimeout(()=>card.classList.add('dragging'),0);});
-    card.addEventListener('dragend',()=>{card.classList.remove('dragging');dragged=null;});
-    card.addEventListener('dragover',e=>{
+function setupDrag() {
+  let dragged = null;
+  document.querySelectorAll('.clock-card').forEach(card => {
+    card.draggable = true;
+    card.addEventListener('dragstart', () => { dragged = card; setTimeout(() => card.classList.add('dragging'), 0); });
+    card.addEventListener('dragend',   () => { card.classList.remove('dragging'); dragged = null; });
+    card.addEventListener('dragover', e => {
       e.preventDefault();
-      if(dragged&&dragged!==card){
-        const all=[...document.querySelectorAll('.clock-card')];
-        const from=all.indexOf(dragged),to=all.indexOf(card);
-        if(from!==-1&&to!==-1){
-          state.zones.splice(to,0,state.zones.splice(from,1)[0]);
-          renderCards();save();
+      if (dragged && dragged !== card) {
+        const all  = [...document.querySelectorAll('.clock-card')];
+        const from = all.indexOf(dragged), to = all.indexOf(card);
+        if (from !== -1 && to !== -1) {
+          state.zones.splice(to, 0, state.zones.splice(from, 1)[0]);
+          renderCards(); save();
         }
       }
     });
   });
 }
 
-// ══════════════════════════════════════════════════════════
-//  CUSTOM BG MODAL
-// ══════════════════════════════════════════════════════════
+// ═══════════ CUSTOM BG MODAL ═══════════
 
-let _pendingBg='#1a1a2e';
+let _pendingBg = '#1a1a2e';
 
-function openBgModal(){
-  _pendingBg=state.customBg;
-  document.getElementById('bgCustomColour').value=_pendingBg;
-  renderBgPresets();updateBgPreview(_pendingBg);
+function openBgModal() {
+  _pendingBg = state.customBg;
+  document.getElementById('bgCustomColour').value = _pendingBg;
+  renderBgPresets(); updateBgPreview(_pendingBg);
   document.getElementById('bgModal').classList.add('open');
 }
-function closeBgModal(){document.getElementById('bgModal').classList.remove('open');}
+function closeBgModal() { document.getElementById('bgModal').classList.remove('open'); }
 
-function renderBgPresets(){
-  const c=document.getElementById('bgPresets');c.innerHTML='';
-  BG_PRESETS.forEach(p=>{
-    const b=document.createElement('button');
-    b.className='bg-preset'+(p.hex===_pendingBg?' selected':'');
-    b.style.background=p.hex;b.title=p.label;
-    b.onclick=()=>{_pendingBg=p.hex;document.getElementById('bgCustomColour').value=p.hex;updateBgPreview(p.hex);renderBgPresets();};
+function renderBgPresets() {
+  const c = document.getElementById('bgPresets'); c.innerHTML = '';
+  BG_PRESETS.forEach(p => {
+    const b = document.createElement('button');
+    b.className = 'bg-preset' + (p.hex === _pendingBg ? ' selected' : '');
+    b.style.background = p.hex; b.title = p.label;
+    b.onclick = () => { _pendingBg = p.hex; document.getElementById('bgCustomColour').value = p.hex; updateBgPreview(p.hex); renderBgPresets(); };
     c.appendChild(b);
   });
 }
-function bgPickerChange(){_pendingBg=document.getElementById('bgCustomColour').value;updateBgPreview(_pendingBg);renderBgPresets();}
-function updateBgPreview(hex){
-  document.getElementById('bgLivePreview').style.background=
-    `linear-gradient(to right,${hex} 30%,${lightenHex(hex,22)})`;
+function bgPickerChange() { _pendingBg = document.getElementById('bgCustomColour').value; updateBgPreview(_pendingBg); renderBgPresets(); }
+function updateBgPreview(hex) {
+  document.getElementById('bgLivePreview').style.background =
+    `linear-gradient(to right, ${hex} 30%, ${lightenHex(hex, 22)})`;
 }
-function applyCustomBg(){state.customBg=_pendingBg;state.theme='custom';applyTheme();closeBgModal();save();}
+function applyCustomBg() { state.customBg = _pendingBg; state.theme = 'custom'; applyTheme(); closeBgModal(); save(); }
 
-// ══════════════════════════════════════════════════════════
-//  INIT
-// ══════════════════════════════════════════════════════════
+// ═══════════ INIT ═══════════
 
 load();
 applyTheme();
@@ -1104,10 +1183,10 @@ setFormat(state.format);
 applyLayout();
 renderCards();
 tick();
-setInterval(tick,1000);
-setInterval(refreshTemps,600000); // re-fetch temps every 10 min
+setInterval(tick, 1000);
+setInterval(() => state.zones.forEach((z,i) => { if(z.lat!=null) loadCardTemp(i,z.lat,z.lon); }), 600000);
 
-if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 </body>
 </html>
